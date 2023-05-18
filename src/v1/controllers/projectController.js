@@ -2,10 +2,10 @@ const projectService = require("../services/projectService");
 
 const errNoProjectId = "No projectId - A project Id is required to get an project";
 
-const getAllProjects = (req, res) => {
+const getAllProjects = async (req, res) => {
     console.log("GET request: All Projects");
     try {
-        const allProjects = projectService.getAllProjects();
+        const allProjects = await projectService.getAllProjects();
         res.send({ status: "OK", data: allProjects });
     } catch (error) {
         res
@@ -15,7 +15,7 @@ const getAllProjects = (req, res) => {
     
   };
   
-  const getProject = (req, res) => {
+  const getProject = async (req, res) => {
     const { params: { projectId }, } = req;
     console.log("GET request: project");
     if (!projectId) {
@@ -27,7 +27,7 @@ const getAllProjects = (req, res) => {
             })
     }
     try {
-        const project = projectService.getProject(projectId);
+        const project = await projectService.getProject(projectId);
         res.send({ status: "OK", data: project });
     } catch (error) {
         res
@@ -36,7 +36,7 @@ const getAllProjects = (req, res) => {
     }
   };
   
-  const createProject = (req, res) => {
+  const createProject = async (req, res) => {
     const { body } = req;
     console.log("POST request: New Project");
     if ( !body.name || !body.creator )   {
@@ -56,7 +56,7 @@ const getAllProjects = (req, res) => {
         creator: body.creator,
       };
     try {
-        const createdProject = projectService.createProject(newProject);
+        const createdProject = await projectService.createProject(newProject);
         res.status(201).send({ status: "OK", data: createdProject });
     } catch (error) {
         res
@@ -65,7 +65,7 @@ const getAllProjects = (req, res) => {
     }
 };
   
-  const updateProject = (req, res) => {
+  const updateProject = async (req, res) => {
     const { body, params: { projectId }, } = req;
     console.log("PATCH request: project");
     if (!projectId) {
@@ -77,7 +77,7 @@ const getAllProjects = (req, res) => {
       });
     }
     try {
-        const updatedProject = projectService.updateProject(projectId, body);
+        const updatedProject = await projectService.updateProject(projectId, body);
         res.send({ status: "OK", data: updatedProject});
     } catch (error) {
         res
@@ -86,7 +86,7 @@ const getAllProjects = (req, res) => {
     }
   };
   
-  const deleteProject = (req, res) => {
+  const deleteProject = async (req, res) => {
     console.log("DELETE request: project");
     const { params: { projectId }, } = req;
     if (!projectId) {
@@ -98,7 +98,7 @@ const getAllProjects = (req, res) => {
       });
     }
     try {
-    projectService.deleteProject(projectId);
+    await projectService.deleteProject(projectId);
     res.status(204).send({status: "OK"});
     } catch (error) {
         res

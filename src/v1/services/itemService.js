@@ -3,6 +3,7 @@ const { ProjectModel, ItemModel } = require('../../models/projectModel');
 const findProject = async (projectId) => {
   const project = await ProjectModel.findById(projectId);
   if (!project) {
+    console.log('Project not found');
     throw new Error('Project not found');
   }
   return project;
@@ -23,8 +24,8 @@ const getAllItems = async (projectId) => {
   };
   
   const createItem = async (projectId, newItem) => {
+    console.log("looking for project " + projectId);
     let project = await findProject(projectId);
-
     const formattedItem = new ItemModel({
         name: newItem.name,
         creator: newItem.creator,

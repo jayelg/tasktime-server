@@ -2,10 +2,11 @@ const itemService = require("../services/itemService");
 
 const errNoItemId = "No itemId - An item Id is required to get an item";
 
-const getAllItems = (req, res) => {
+const getAllItems = async (req, res) => {
     console.log("GET request: All Items");
     try {
-        const allItems = itemService.getAllItems();
+        const projectId = req.params.projectId;
+        const allItems = await itemService.getAllItems(projectId);
         res.send({ status: "OK", data: allItems });
     } catch (error) {
         res
@@ -15,8 +16,8 @@ const getAllItems = (req, res) => {
     
   };
   
-  const getItem = (req, res) => {
-    const { params: { itemId }, } = req;
+  const getItem = async (req, res) => {
+    const { params: { projectId, itemId }, } = req;
     console.log("GET request: item");
     if (!itemId) {
         res
@@ -27,7 +28,7 @@ const getAllItems = (req, res) => {
             })
     }
     try {
-        const item = itemService.getItem(itemId);
+        const item = await itemService.getItem(projectId, itemId);
         res.send({ status: "OK", data: item });
     } catch (error) {
         res
@@ -36,7 +37,7 @@ const getAllItems = (req, res) => {
     }
   };
   
-  const createItem = (req, res) => {
+  const createItem = async (req, res) => {
     const { body } = req;
     console.log("POST request: New Item");
     if ( !body.name || !body.creator )   {
@@ -56,7 +57,7 @@ const getAllItems = (req, res) => {
         creator: body.creator,
       };
     try {
-        const createdItem = itemService.createItem(newItem);
+        const createdItem = await itemService.createItem(body.projectId, newItem);
         res.status(201).send({ status: "OK", data: createdItem });
     } catch (error) {
         res
@@ -65,10 +66,10 @@ const getAllItems = (req, res) => {
     }
 };
   
-  const updateItem = (req, res) => {
-    const { body, params: { itemId }, } = req;
+  const updateItem = async (req, res) => {
+    const { body, params: { projectId, itemId }, } = req;
     console.log("PATCH request: item");
-    if (!itemId) {
+    if (!projectId || !itemId) {
         res
             .status(400)
             .send({
@@ -77,7 +78,7 @@ const getAllItems = (req, res) => {
       });
     }
     try {
-        const updatedItem = itemService.updateItem(itemId, body);
+        const updatedItem = await itemService.updateItem(projectId, itemId, body);
         res.send({ status: "OK", data: updatedItem});
     } catch (error) {
         res
@@ -86,9 +87,9 @@ const getAllItems = (req, res) => {
     }
   };
   
-  const deleteItem = (req, res) => {
+  const deleteItem = async (req, res) => {
     console.log("DELETE request: item");
-    const { params: { itemId }, } = req;
+    const { params: { projectId, itemId }, } = req;
     if (!itemId) {
         res
             .status(400)
@@ -98,7 +99,7 @@ const getAllItems = (req, res) => {
       });
     }
     try {
-    itemService.deleteItem(itemId);
+    await itemService.deleteItem(projectId, itemId);
     res.status(204).send({status: "OK"});
     } catch (error) {
         res
