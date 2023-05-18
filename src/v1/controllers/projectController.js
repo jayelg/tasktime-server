@@ -1,12 +1,12 @@
-const itemService = require("../services/itemService");
+const projectService = require("../services/projectService");
 
-const errNoItemId = "No itemId - An item Id is required to get an item";
+const errNoProjectId = "No projectId - A project Id is required to get an project";
 
-const getAllItems = (req, res) => {
-    console.log("GET request: All Items");
+const getAllProjects = (req, res) => {
+    console.log("GET request: All Projects");
     try {
-        const allItems = itemService.getAllItems();
-        res.send({ status: "OK", data: allItems });
+        const allProjects = projectService.getAllProjects();
+        res.send({ status: "OK", data: allProjects });
     } catch (error) {
         res
             .status(error?.status || 500)
@@ -15,20 +15,20 @@ const getAllItems = (req, res) => {
     
   };
   
-  const getItem = (req, res) => {
-    const { params: { itemId }, } = req;
-    console.log("GET request: item");
-    if (!itemId) {
+  const getProject = (req, res) => {
+    const { params: { projectId }, } = req;
+    console.log("GET request: project");
+    if (!projectId) {
         res
             .status(400)
             .send({
                 status: "FAILED",
-                data: { error: errNoItemId}
+                data: { error: errNoProjectId}
             })
     }
     try {
-        const item = itemService.getItem(itemId);
-        res.send({ status: "OK", data: item });
+        const project = projectService.getProject(projectId);
+        res.send({ status: "OK", data: project });
     } catch (error) {
         res
             .status(error?.status || 500)
@@ -36,9 +36,9 @@ const getAllItems = (req, res) => {
     }
   };
   
-  const createItem = (req, res) => {
+  const createProject = (req, res) => {
     const { body } = req;
-    console.log("POST request: New Item");
+    console.log("POST request: New Project");
     if ( !body.name || !body.creator )   {
         res
             .status(400)
@@ -51,13 +51,13 @@ const getAllItems = (req, res) => {
         });
         return;
     }
-    const newItem = {
+    const newProject = {
         name: body.name,
         creator: body.creator,
       };
     try {
-        const createdItem = itemService.createItem(newItem);
-        res.status(201).send({ status: "OK", data: createdItem });
+        const createdProject = projectService.createProject(newProject);
+        res.status(201).send({ status: "OK", data: createdProject });
     } catch (error) {
         res
             .status(error?.status || 500)
@@ -65,20 +65,20 @@ const getAllItems = (req, res) => {
     }
 };
   
-  const updateItem = (req, res) => {
-    const { body, params: { itemId }, } = req;
-    console.log("PATCH request: item");
-    if (!itemId) {
+  const updateProject = (req, res) => {
+    const { body, params: { projectId }, } = req;
+    console.log("PATCH request: project");
+    if (!projectId) {
         res
             .status(400)
             .send({
                 status: "FAILED",
-                data: { error: errNoItemId },
+                data: { error: errNoProjectId },
       });
     }
     try {
-        const updatedItem = itemService.updateItem(itemId, body);
-        res.send({ status: "OK", data: updatedItem});
+        const updatedProject = projectService.updateProject(projectId, body);
+        res.send({ status: "OK", data: updatedProject});
     } catch (error) {
         res
             .status(error?.status || 500)
@@ -86,19 +86,19 @@ const getAllItems = (req, res) => {
     }
   };
   
-  const deleteItem = (req, res) => {
-    console.log("DELETE request: item");
-    const { params: { itemId }, } = req;
-    if (!itemId) {
+  const deleteProject = (req, res) => {
+    console.log("DELETE request: project");
+    const { params: { projectId }, } = req;
+    if (!projectId) {
         res
             .status(400)
             .send({
                 status: "FAILED",
-                data: { error: errNoItemId },
+                data: { error: errNoProjectId },
       });
     }
     try {
-    itemService.deleteItem(itemId);
+    projectService.deleteProject(projectId);
     res.status(204).send({status: "OK"});
     } catch (error) {
         res
@@ -108,9 +108,9 @@ const getAllItems = (req, res) => {
   };
   
   module.exports = {
-    getAllItems,
-    getItem,
-    createItem,
-    updateItem,
-    deleteItem,
+    getAllProjects,
+    getProject,
+    createProject,
+    updateProject,
+    deleteProject,
   };

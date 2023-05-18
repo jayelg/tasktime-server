@@ -5,9 +5,9 @@ const router = express.Router();
 
 router.get("/", itemController.getAllItems);
 
-router.get("/:itemId", itemController.getOneItem);
+router.get("/:itemId", itemController.getItem);
 
-router.post("/", itemController.createNewItem);
+router.post("/", itemController.createItem);
 
 router.patch("/:itemId", itemController.updateItem);
 
