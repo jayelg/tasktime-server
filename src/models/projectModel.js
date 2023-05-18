@@ -70,12 +70,26 @@ const itemSchema = new mongoose.Schema({
         required: false,
         type: String
     },
-    parentDependencies: {
+    colour: {
+        required: true,
+        type: String
+    },
+    nestedItemIds: {
         required: true,
         type: Array,
         default: []
     },
-    childDependencies: {
+    parentItemId: {
+    required: true,
+        type: String,
+        default: "topLevel"
+    },
+    predecessorItemIds: {
+        required: true,
+        type: Array,
+        default: []
+    },
+    successorItemIds: {
         required: true,
         type: Array,
         default: []

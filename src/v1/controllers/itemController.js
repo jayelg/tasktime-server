@@ -3,9 +3,8 @@ const itemService = require("../services/itemService");
 const errNoItemId = "No itemId - An item Id is required to get an item";
 
 const getAllItems = async (req, res) => {
-    console.log("GET request: All Items");
     try {
-        const projectId = req.params.projectId;
+        const { params: { projectId } } = req;
         const allItems = await itemService.getAllItems(projectId);
         res.send({ status: "OK", data: allItems });
     } catch (error) {
@@ -17,7 +16,7 @@ const getAllItems = async (req, res) => {
   };
   
   const getItem = async (req, res) => {
-    const { params: { projectId, itemId }, } = req;
+    const { params: { projectId, itemId } } = req;
     console.log("GET request: item");
     if (!itemId) {
         res
@@ -38,26 +37,29 @@ const getAllItems = async (req, res) => {
   };
   
   const createItem = async (req, res) => {
-    const { body } = req;
-    console.log("POST request: New Item");
-    if ( !body.name || !body.creator )   {
+    const { params: { projectId } } = req;
+    const { name, creator, parentItemId, colour } = req.body;
+    console.log(projectId + name + creator + colour);
+    if ( !name || !creator || !colour )   {
         res
             .status(400)
             .send({
             status: "FAILED",
             data: {
                 error:
-                "One of the following properties is missing or is empty in request body: 'name', 'creator'",
+                "One of the following properties is missing or is empty in request body: 'name', 'creator', 'colour'",
             },
         });
         return;
     }
     const newItem = {
-        name: body.name,
-        creator: body.creator,
+        name: name,
+        creator: creator,
+        colour: colour,
+        parentItemId: parentItemId,
       };
     try {
-        const createdItem = await itemService.createItem(body.projectId, newItem);
+        const createdItem = await itemService.createItem(projectId, newItem);
         res.status(201).send({ status: "OK", data: createdItem });
     } catch (error) {
         res
@@ -87,6 +89,7 @@ const getAllItems = async (req, res) => {
     }
   };
   
+  // change params item id is in url?
   const deleteItem = async (req, res) => {
     console.log("DELETE request: item");
     const { params: { projectId, itemId }, } = req;
