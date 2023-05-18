@@ -1,10 +1,12 @@
 const { ProjectModel, ItemModel } = require('../../models/projectModel');
+const mongoose = require('mongoose');
 
 const findProject = async (projectId) => {
   const project = await ProjectModel.findById(projectId);
+  console.log(project);
   if (!project) {
-    console.log('Project not found');
-    throw new Error('Project not found');
+    console.log('Item not found');
+    throw new Error('Item not found for ' + projectId);
   }
   return project;
 }
@@ -29,6 +31,8 @@ const getAllItems = async (projectId) => {
     const formattedItem = new ItemModel({
         name: newItem.name,
         creator: newItem.creator,
+        colour: newItem.colour,
+        parentItemId: newItem.parentItemId,
         createdAt: new Date().toLocaleString("en-US", { timeZone: "UTC" }),
         updatedAt: new Date().toLocaleString("en-US", { timeZone: "UTC" }),
     });

@@ -1,8 +1,8 @@
 const express = require("express"); 
 const mongoose = require('mongoose');
 const bodyParser = require("body-parser");
-const v1ProjectRouter = require("./v1/routes/projectRoutes");
-const v1ItemRouter = require("./v1/routes/itemRoutes");
+const cors = require("cors");
+const v1Router = require("./v1/routes/routes");
 
 require('dotenv').config();
 const mongoString = process.env.DATABASE_URL
@@ -19,10 +19,10 @@ database.once('connected', () => {
 const app = express(); 
 const PORT = process.env.PORT || 3010;
 
+app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(`public`));
-app.use("/api/v1/projects", v1ProjectRouter);
-app.use("/api/v1/items", v1ItemRouter);
+app.use("/api/v1/projects", v1Router);
 
 app.listen(PORT, () => { 
     console.log(`Tasktime API is listening on port ${PORT}`); 
