@@ -3,10 +3,8 @@ const mongoose = require('mongoose');
 
 const findProject = async (projectId) => {
   const project = await ProjectModel.findById(projectId);
-  console.log(project);
   if (!project) {
-    console.log('Item not found');
-    throw new Error('Item not found for ' + projectId);
+    throw new Error('Project not found');
   }
   return project;
 }
@@ -20,13 +18,12 @@ const getAllItems = async (projectId) => {
     let project = await findProject(projectId);
     const item = project.items.find((item) => item._id.toString() === itemId);
     if (!item) {
-      throw new Error('Item not found');
-    };
+      throw new Error('Get Item: Item not found');
+    }
     return item;
   };
   
   const createItem = async (projectId, newItem) => {
-    console.log("looking for project " + projectId);
     let project = await findProject(projectId);
     const formattedItem = new ItemModel({
         name: newItem.name,
@@ -52,7 +49,7 @@ const getAllItems = async (projectId) => {
     const item = project.items.find((item) => item._id.toString() === itemId);
   
     if (!item) {
-      throw new Error('Item not found');
+      throw new Error('Update: Item not found');
     }
   
     Object.assign(item, changes);
@@ -67,9 +64,9 @@ const getAllItems = async (projectId) => {
   
   const deleteItem = async (projectId, itemId) => {
     const project = await findProject(projectId);
-    const itemIndex = project.items.find((item) => item._id.toString() === itemId);
+    const itemIndex = project.items.findIndex((item) => item._id.toString() === itemId);
     if (itemIndex === -1) {
-      throw new Error('Item not found');
+      throw new Error('Delete: Item not found');
     }
     project.items.splice(itemIndex, 1);
     try {
@@ -78,6 +75,12 @@ const getAllItems = async (projectId) => {
       throw error;
     }
   };
+
+  const deleteAllItems = async (projectId) => {
+    const project = await findProject(projectId);
+    project.items = [];
+    await project.save();
+  }
   
   module.exports = {
     getAllItems,
@@ -85,4 +88,5 @@ const getAllItems = async (projectId) => {
     createItem,
     updateItem,
     deleteItem,
+    deleteAllItems,
   };

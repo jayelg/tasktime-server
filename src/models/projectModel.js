@@ -147,7 +147,7 @@ const projectSchema = new mongoose.Schema({
         required: true,
         type: Array,
         default: [],
-        of: itemSchema
+        of: itemSchema,
     }
 })
 

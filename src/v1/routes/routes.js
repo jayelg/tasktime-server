@@ -28,4 +28,9 @@ router.patch("/:projectId/items/:itemId", itemController.updateItem);
 
 router.delete("/:projectId/items/:itemId", itemController.deleteItem);
 
+// temp for testing
+
+router.delete("/:projectId/deleteitems/", itemController.deleteAllItems);
+
+
 module.exports = router;
