@@ -15,6 +15,7 @@ const getAllItems = async (projectId) => {
 };
   
   const getItem = async (projectId, itemId) => {
+    console.log("getItem service: "+itemId);
     let project = await findProject(projectId);
     const item = project.items.find((item) => item._id.toString() === itemId);
     if (!item) {
@@ -30,6 +31,7 @@ const getAllItems = async (projectId) => {
         creator: newItem.creator,
         colour: newItem.colour,
         parentItemId: newItem.parentItemId,
+        predecessorItemIds: newItem.predecessorItemIds,
         createdAt: new Date().toLocaleString("en-US", { timeZone: "UTC" }),
         updatedAt: new Date().toLocaleString("en-US", { timeZone: "UTC" }),
     });
