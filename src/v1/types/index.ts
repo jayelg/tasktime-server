@@ -2,24 +2,24 @@ import { Types } from 'mongoose';
 
 export interface Item {
     _id: Types.ObjectId,
-    projectId: Types.ObjectId,
+    projectId: string,
     name: string,
     creator: string,
     createdAt: string,
     updatedAt: string,
     description?: string,
-    members: Types.ObjectId[],
+    members: string[],
     timeAllocated?: number,
     timeSpent: number,
     isComplete: boolean,
     reqReview: boolean,
-    reviewers?: Types.ObjectId[],
+    reviewers?: string[],
     reviewState?: string,
     colour: string,
-    nestedItemIds: Types.ObjectId[],
-    parentItemId: Types.ObjectId,
-    predecessorItemIds: Types.ObjectId[],
-    successorItemIds: Types.ObjectId[],
+    nestedItemIds: string[],
+    parentItemId: string,
+    predecessorItemIds: string[],
+    successorItemIds: string[],
     itemObjects: ItemObject[]
 }
 
