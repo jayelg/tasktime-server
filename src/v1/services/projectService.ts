@@ -1,4 +1,5 @@
 const { ProjectModel } = require('../../models/projectModel');
+import { Project } from '../types/';
 
 const getAllProjects = async () => {
     try {
@@ -9,7 +10,7 @@ const getAllProjects = async () => {
     }
   };
   
-  const getProject = async (projectId) => {
+  const getProject = async (projectId: String) => {
     try {
         const project = await ProjectModel.findById(projectId);
         if (!project) {
@@ -21,7 +22,7 @@ const getAllProjects = async () => {
     }
   };
   
-  const createProject = async (newProject) => {
+  const createProject = async (newProject: Project) => {
     const formattedProject = new ProjectModel({
         name: newProject.name,
         creator: newProject.creator,
@@ -38,7 +39,7 @@ const getAllProjects = async () => {
     }
   };
   
-  const updateProject = async (projectId, changes) => {
+  const updateProject = async (projectId: String, changes: Object) => {
     try {
         const updatedProject = await ProjectModel.findByIdAndUpdate(projectId, changes, { new: true });
         return updatedProject;
@@ -47,7 +48,7 @@ const getAllProjects = async () => {
     }
   };
   
-  const deleteProject = async (projectId) => {
+  const deleteProject = async (projectId: String) => {
     try {
       await ProjectModel.findByIdAndDelete(projectId);
     } catch (error) {

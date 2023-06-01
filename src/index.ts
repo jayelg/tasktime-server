@@ -1,14 +1,14 @@
-const express = require("express"); 
-const mongoose = require('mongoose');
+const express = require('express');
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const v1Router = require("./v1/routes/routes");
-
+const v1Router = require("./v1/routes/");
+import { connect, connection } from 'mongoose';
 require('dotenv').config();
+
 const mongoString = process.env.DATABASE_URL
-mongoose.connect(mongoString);
-const database = mongoose.connection
-database.on('error', (error) => {
+typeof mongoString === "string" ? connect(mongoString) : null;
+const database = connection;
+database.on('error', (error: Error) => {
     console.log(error)
 })
 

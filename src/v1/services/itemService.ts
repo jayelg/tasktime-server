@@ -1,7 +1,9 @@
 const { ProjectModel, ItemModel } = require('../../models/projectModel');
-const mongoose = require('mongoose');
+const { ObjectId } = require('mongodb');
+import { Types } from 'mongoose';
+import { Item } from '../types/';
 
-const findProject = async (projectId) => {
+const findProject = async (projectId: Types.ObjectId) => {
   const project = await ProjectModel.findById(projectId);
   if (!project) {
     throw new Error('Project not found');
@@ -9,29 +11,30 @@ const findProject = async (projectId) => {
   return project;
 }
 
-const getAllItems = async (projectId) => {
+const getAllItems = async (projectId: Types.ObjectId) => {
   let project = await findProject(projectId);
   return project.items;
 };
   
-  const getItem = async (projectId, itemId) => {
-    console.log("getItem service: "+itemId);
+  const getItem = async (projectId: Types.ObjectId, itemId: Types.ObjectId) => {
     let project = await findProject(projectId);
-    const item = project.items.find((item) => item._id.toString() === itemId);
+    const item = project.items.id(itemId);
     if (!item) {
       throw new Error('Get Item: Item not found');
     }
+    console.log(item);
     return item;
   };
   
-  const createItem = async (projectId, newItem) => {
+  // all _id ObjectId type formatting is done here just before interfacing with db.
+  const createItem = async (projectId: Types.ObjectId, newItem: Item) => {
     let project = await findProject(projectId);
     const formattedItem = new ItemModel({
         name: newItem.name,
         creator: newItem.creator,
         colour: newItem.colour,
-        parentItemId: newItem.parentItemId,
-        predecessorItemIds: newItem.predecessorItemIds,
+        parentItemId: new ObjectId(newItem.parentItemId),
+        predecessorItemIds: newItem.predecessorItemIds ? newItem.predecessorItemIds.map(id => new ObjectId(id)) : [],
         createdAt: new Date().toLocaleString("en-US", { timeZone: "UTC" }),
         updatedAt: new Date().toLocaleString("en-US", { timeZone: "UTC" }),
     });
@@ -46,27 +49,28 @@ const getAllItems = async (projectId) => {
     }
   };
   
-  const updateItem = async (projectId, itemId, changes) => {
+  const updateItem = async (projectId: Types.ObjectId, itemId: Types.ObjectId, changes: Object) => {
     const project = await findProject(projectId);
-    const item = project.items.find((item) => item._id.toString() === itemId);
-  
+    const item = project.items.id(itemId);
+
     if (!item) {
       throw new Error('Update: Item not found');
     }
-  
-    Object.assign(item, changes);
+    
+    item.set(changes);
   
     try {
-      await project.save();
+      console.log("returned updated item //////");
+      console.log(await project.save());
       return item;
     } catch (error) {
       throw error;
     }
   };
   
-  const deleteItem = async (projectId, itemId) => {
+  const deleteItem = async (projectId: Types.ObjectId, itemId: Types.ObjectId) => {
     const project = await findProject(projectId);
-    const itemIndex = project.items.findIndex((item) => item._id.toString() === itemId);
+    const itemIndex = project.items.findIndex((item: Item) => item._id === itemId);
     if (itemIndex === -1) {
       throw new Error('Delete: Item not found');
     }
@@ -78,7 +82,7 @@ const getAllItems = async (projectId) => {
     }
   };
 
-  const deleteAllItems = async (projectId) => {
+  const deleteAllItems = async (projectId: Types.ObjectId) => {
     const project = await findProject(projectId);
     project.items = [];
     await project.save();

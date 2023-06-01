@@ -1,22 +1,11 @@
-const mongoose = require('mongoose');
+import { Schema, model } from 'mongoose';
+import { Project, Item } from '../v1/types';
 
-const streamSchema = new mongoose.Schema({
-    name: {
+const itemSchema = new Schema<Item>({
+    projectId: {
         required: true,
-        type: String
+        type: Schema.Types.ObjectId
     },
-    colour: {
-        required: true,
-        type: String
-    },
-    tasks: {
-        required: true,
-        type: Array,
-        default: []
-    }
-});
-
-const itemSchema = new mongoose.Schema({
     name: {
         required: true,
         type: String,
@@ -40,7 +29,7 @@ const itemSchema = new mongoose.Schema({
     },
     members: {
         required: true,
-        type: Array,
+        type: [Schema.Types.ObjectId],
         default: []
     },
     timeAllocated: {
@@ -62,9 +51,9 @@ const itemSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    reviewer: {
+    reviewers: {
         required: false,
-        type: String
+        type: [Schema.Types.ObjectId]
     },
     reviewState: {
         required: false,
@@ -76,38 +65,32 @@ const itemSchema = new mongoose.Schema({
     },
     nestedItemIds: {
         required: true,
-        type: Array,
+        type: [Schema.Types.ObjectId],
         default: []
     },
     parentItemId: {
     required: true,
-        type: String,
+        type: Schema.Types.ObjectId,
         default: "topLevel"
     },
     predecessorItemIds: {
         required: true,
-        type: Array,
+        type: [Schema.Types.ObjectId],
         default: []
     },
     successorItemIds: {
         required: true,
-        type: Array,
+        type: [Schema.Types.ObjectId],
         default: []
     },
-    objects: {
+    itemObjects: {
         required: true,
-        type: Array,
+        type: [Object],
         default: []
-    },
-    streams: {
-        required: true,
-        type: Object,
-        default: {},
-        of: streamSchema
     }
 })
 
-const projectSchema = new mongoose.Schema({
+const projectSchema = new Schema<Project>({
     name: {
         required: true,
         type: String,
@@ -131,7 +114,7 @@ const projectSchema = new mongoose.Schema({
     },
     members: {
         required: true,
-        type: Array,
+        type: [String],
         default: []
     },
     timeAllocated: {
@@ -145,14 +128,14 @@ const projectSchema = new mongoose.Schema({
     },
     items: {
         required: true,
-        type: Array,
+        type: [itemSchema],
         default: [],
         of: itemSchema,
     }
 })
 
-const ProjectModel = mongoose.model('Project', projectSchema);
-const ItemModel = mongoose.model('Item', itemSchema);
+const ProjectModel = model('Project', projectSchema);
+const ItemModel = model('Item', itemSchema);
 
 module.exports = {
     ProjectModel,
