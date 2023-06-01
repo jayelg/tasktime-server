@@ -1,25 +1,44 @@
+import { Request, Response } from "express";
+import { Types } from 'mongoose';
 const itemService = require("../services/itemService");
 
+// todo - move to ../errors/index.ts
 const errNoItemId = "No itemId - An item Id is required to get an item";
 
-const getAllItems = async (req, res) => {
+const checkRequest = (whiteList: string[], request: any) => { // request type should be an object with properties of any type can it be less permissive?
+  let missingItems = [];
+  for (const property of whiteList) {
+    if (!request.hasOwnProperty(property) || !request[property]) {
+      missingItems.push(property);
+    }
+  }
+  if (missingItems.length > 0) {
+    throw new Error("The following properties are missing: " + missingItems.join(", "));
+  }
+}
+
+const getAllItemsController = async (req: Request, res: Response) => {
     try {
-        const { params: { projectId } } = req;
+        const { projectId } = req.params;
         const allItems = await itemService.getAllItems(projectId);
         res.send({ status: "OK", data: allItems });
-    } catch (error) {
+    } catch (error: any) {
+      console.log(error);
         res
-            .status(error?.status || 500)
+            .status(error.status || 500)
             .send({ status: "FAILED", data: { error: error?.message || error} });
     }
     
-  };
+};
   
-  const getItem = async (req, res) => {
-    const { params: { projectId, itemId } } = req;
-    console.log("GET request: item");
-    if (!itemId) {
-        res
+const getItemController = async (req: Request, res: Response) => {
+  const { projectId } = req.params;
+  const { itemId } = req.params;
+  console.log("GET request: item");
+  const whiteList = ["projectId","itemId"];
+  checkRequest(whiteList, {projectId: projectId, itemId: itemId});
+  if (!itemId) {
+     res
             .status(400)
             .send({
                 status: "FAILED",
@@ -29,7 +48,8 @@ const getAllItems = async (req, res) => {
     try {
         const item = await itemService.getItem(projectId, itemId);
         res.send({ status: "OK", data: item });
-    } catch (error) {
+    } catch (error: any) {
+      console.log(error);
         res
             .status(error?.status || 500)
             .send({ status: "FAILED", data: { error: error?.message || error } });
@@ -40,68 +60,61 @@ const getAllItems = async (req, res) => {
   // checks for correct parameters in req.body
   // creates a newItem
   // if it isn't a top level item then it will add the new item to the nestedItemIds property of its parent
-  const createItem = async (req, res) => {
-    const { params: { projectId } } = req;
-    const { name, creator, parentItemId, colour, predecessorItemIds } = req.body;
-    if ( !name || !creator || !colour )   {
-        res
-            .status(400)
-            .send({
-            status: "FAILED",
-            data: {
-                error:
-                "One of the following properties is missing or is empty in request body: 'name', 'creator', 'colour'",
-            },
-        });
-        return;
-    }
+  const createItemController = async (req: Request, res: Response) => {
+    console.log(req.body.parentItemId);
+    const whiteList = ["projectId","name","creator","colour"];
     const newItem = {
-        name: name,
-        creator: creator,
-        colour: colour,
-        parentItemId: parentItemId,
-        predecessorItemIds: predecessorItemIds,
-      };
+      projectId: new Types.ObjectId(req.params.projectId),
+      name: req.body.name,
+      creator: req.body.creator,
+      colour: req.body.colour,
+      parentItemId: new Types.ObjectId(req.body.parentItemId),
+      predecessorItemIds: Array.isArray(req.body.predecessorItemIds)
+        ? req.body.predecessorItemIds.map((id: string) => new Types.ObjectId(id))
+        : [],
+    };
+    console.log(newItem);
     try {
-        const createdItem = await itemService.createItem(projectId, newItem);
-        // handle nested item relationships
-        if (createdItem.parentItemId !== "topLevel") {
-            const parentItem = await itemService.getItem(projectId, parentItemId);
-            const updatedNestedItemIds = [...parentItem.nestedItemIds, createdItem._id];
-            await itemService.updateItem(projectId, parentItemId, { nestedItemIds: updatedNestedItemIds });
+      checkRequest(whiteList, newItem); 
+      const createdItem = await itemService.createItem(newItem.projectId, newItem);
+      // handle nested item relationships
+      if (newItem.parentItemId.equals(newItem.projectId)) {
+        console.log("parent not top level");
+        const parentItem = await itemService.getItem(newItem.projectId, newItem.parentItemId);
+        const updatedNestedItemIds = { nestedItemIds: [...parentItem.nestedItemIds, createdItem._id] };
+        // everything working up to here for direct http request but not axios??
+        console.log("new Item from Db " + createdItem);
+        const parentUpdate = await itemService.updateItem(newItem.projectId, newItem.parentItemId, updatedNestedItemIds);
+        console.log("updated parent item from db " + parentUpdate);
+      }
+      // handle predecessor/successor item relationships
+      if (createdItem.predecessorItemIds.length !== 0) {
+        console.log("item has predecessor.");
+        for (let predecessorItemId of createdItem.predecessorItemIds) {
+          const predecessorItem = await itemService.getItem(newItem.projectId, predecessorItemId);
+          const updatedSuccessorItemIds = [...predecessorItem.successorItemIds, createdItem._id];
+          const updatedParent = await itemService.updateItem(newItem.projectId, predecessorItemId, { successorItemIds: updatedSuccessorItemIds });
         }
-        // handle predecessor/successor item relationships
-        if (createdItem.predecessorItemIds.length !== 0) {
-          console.log("item has predecessor.");
-          for (let predecessorItemId of createdItem.predecessorItemIds) {
-            const predecessorItem = await itemService.getItem(projectId, predecessorItemId);
-            const updatedSuccessorItemIds = [...predecessorItem.successorItemIds, createdItem._id];
-            console.log("for: " + predecessorItemId);
-            await itemService.updateItem(projectId, predecessorItemId, { successorItemIds: updatedSuccessorItemIds });
-          }
-        }
-        res.status(201).send({ status: "OK", data: createdItem });
-    } catch (error) {
-        res
-            .status(error?.status || 500)
-            .send({ status: "FAILED", data: { error: error?.message || error } });
-    }
+      }
+      console.log("add item complete");
+      res.status(201).send({ status: "OK", data: createdItem });
+  } catch (error: any) {
+      console.log(error);
+      res.status(error?.status || 500).send({ status: "FAILED", data: { error: error?.message || error } });
+  }
 };
   
-const updateItem = async (req, res) => {
-  const {
-    body,
-    params: { projectId, itemId },
-  } = req;
-  console.log("PATCH request: item");
-  console.log(req.body);
-  if (!projectId || !itemId) {
+const updateItemController = async (req: Request, res: Response) => {
+  if (!req.params.projectId || !req.params.itemId) {
     res.status(400).send({
       status: "FAILED",
       data: { error: errNoItemId },
     });
   }
   try {
+    const projectId = new Types.ObjectId(req.params.projectId);
+    const itemId = new Types.ObjectId(req.params.itemId);
+    const { body } = req;
     // blocks none whitelisted parameters
     if (!body.parentItemId && !body.name) {
       console.log("failed whitelist");
@@ -130,7 +143,7 @@ const updateItem = async (req, res) => {
     if (parentItemId !== "topLevel") {
       const parentItem = await itemService.getItem(projectId, parentItemId);
       const updatedNestedItemIds = parentItem.nestedItemIds.filter(
-        (nestedId) => nestedId.toString() !== itemId.toString()
+        (nestedId: Types.ObjectId) => nestedId.toString() !== itemId.toString()
       );
       await itemService.updateItem(projectId, parentItemId, {
         nestedItemIds: updatedNestedItemIds,
@@ -152,7 +165,8 @@ const updateItem = async (req, res) => {
     const updatedItem = await itemService.updateItem(projectId, itemId, body);
 
     res.send({ status: "OK", data: updatedItem });
-  } catch (error) {
+  } catch (error: any) {
+    console.log(error);
     res
       .status(error?.status || 500)
       .send({ status: "FAILED", data: { error: error?.message || error } });
@@ -160,7 +174,7 @@ const updateItem = async (req, res) => {
 };
   
   // todo remove successorItemIds from predecessors
-  const deleteItem = async (req, res) => {
+  const deleteItemController = async (req: Request, res: Response) => {
     console.log("DELETE request: item");
     const {
       params: { projectId, itemId },
@@ -179,7 +193,7 @@ const updateItem = async (req, res) => {
         // Remove item from db
         await itemService.deleteItem(projectId, itemId);
         // Remove each item nested under item from db
-        const nestedItemIds = item.nestedItemIds.map(objectId => objectId.toString());
+        const nestedItemIds = item.nestedItemIds.map((itemId: Types.ObjectId) => itemId.toString());
         if ( nestedItemIds.length !== 0 ) {
           for (const nestedItemId of nestedItemIds) {
               await itemService.deleteItem(projectId, nestedItemId);
@@ -188,22 +202,23 @@ const updateItem = async (req, res) => {
         // Remove the item from the parent nestedItemIds array
         if (parentItemId !== "topLevel") {
             const parentItem = await itemService.getItem(projectId, parentItemId);
-            updatedNestedItemIds = parentItem.nestedItemIds.filter(
-              (nestedId) => nestedId.toString() !== itemId.toString()
+            const updatedNestedItemIds = parentItem.nestedItemIds.filter(
+              (nestedId: Types.ObjectId) => nestedId.toString() !== itemId.toString()
             );
             await itemService.updateItem(projectId, item.parentItemId, {
                 nestedItemIds: updatedNestedItemIds,
             });
         }
     res.status(204).send({ status: "OK" });
-    } catch (error) {
+    } catch (error: any) {
+      console.log(error);
       res
         .status(error?.status || 500)
         .send({ status: "FAILED", data: { error: error?.message || error } });
     }
   };
 
-  const deleteAllItems = async (req, res) => {
+  const deleteAllItemsController = async (req: Request, res: Response) => {
     console.log("Delete all items request.");
     const { params: { projectId } } = req;
     await itemService.deleteAllItems(projectId);
@@ -211,10 +226,10 @@ const updateItem = async (req, res) => {
   }
 
   module.exports = {
-    getAllItems,
-    getItem,
-    createItem,
-    updateItem,
-    deleteItem,
-    deleteAllItems,
+    getAllItemsController,
+    getItemController,
+    createItemController,
+    updateItemController,
+    deleteItemController,
+    deleteAllItemsController,
   };

@@ -1,21 +1,21 @@
+import { Request, Response } from "express";
 const projectService = require("../services/projectService");
-
 const errNoProjectId = "No projectId - A project Id is required to get an project";
 
-const getAllProjects = async (req, res) => {
+const getAllProjectsController = async (req: Request, res: Response) => {
     console.log("GET request: All Projects");
     try {
         const allProjects = await projectService.getAllProjects();
         res.send({ status: "OK", data: allProjects });
-    } catch (error) {
+    } catch (error: any) {
         res
-            .status(error?.status || 500)
+            .status(error.status || 500)
             .send({ status: "FAILED", data: { error: error?.message || error} });
     }
     
   };
   
-  const getProject = async (req, res) => {
+  const getProjectController = async (req: Request, res: Response) => {
     const { params: { projectId }, } = req;
     console.log("GET request: project");
     if (!projectId) {
@@ -29,14 +29,14 @@ const getAllProjects = async (req, res) => {
     try {
         const project = await projectService.getProject(projectId);
         res.send({ status: "OK", data: project });
-    } catch (error) {
+    } catch (error: any) {
         res
             .status(error?.status || 500)
             .send({ status: "FAILED", data: { error: error?.message || error } });
     }
   };
   
-  const createProject = async (req, res) => {
+  const createProjectController = async (req: Request, res: Response) => {
     const { body } = req;
     console.log("POST request: New Project");
     if ( !body.name || !body.creator )   {
@@ -58,14 +58,14 @@ const getAllProjects = async (req, res) => {
     try {
         const createdProject = await projectService.createProject(newProject);
         res.status(201).send({ status: "OK", data: createdProject });
-    } catch (error) {
+    } catch (error: any) {
         res
             .status(error?.status || 500)
             .send({ status: "FAILED", data: { error: error?.message || error } });
     }
 };
   
-  const updateProject = async (req, res) => {
+  const updateProjectController = async (req: Request, res: Response) => {
     const { body, params: { projectId }, } = req;
     console.log("PATCH request: project");
     if (!projectId) {
@@ -79,14 +79,14 @@ const getAllProjects = async (req, res) => {
     try {
         const updatedProject = await projectService.updateProject(projectId, body);
         res.send({ status: "OK", data: updatedProject});
-    } catch (error) {
+    } catch (error: any) {
         res
             .status(error?.status || 500)
             .send({ status: "FAILED", data: { error: error?.message || error } });
     }
   };
   
-  const deleteProject = async (req, res) => {
+  const deleteProjectController = async (req: Request, res: Response) => {
     console.log("DELETE request: project");
     const { params: { projectId }, } = req;
     if (!projectId) {
@@ -100,7 +100,7 @@ const getAllProjects = async (req, res) => {
     try {
     await projectService.deleteProject(projectId);
     res.status(204).send({status: "OK"});
-    } catch (error) {
+    } catch (error: any) {
         res
             .status(error?.status || 500)
             .send({ status: "FAILED", data: { error: error?.message || error } });
@@ -108,9 +108,9 @@ const getAllProjects = async (req, res) => {
   };
   
   module.exports = {
-    getAllProjects,
-    getProject,
-    createProject,
-    updateProject,
-    deleteProject,
+    getAllProjectsController,
+    getProjectController,
+    createProjectController,
+    updateProjectController,
+    deleteProjectController,
   };
