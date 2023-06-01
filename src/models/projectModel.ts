@@ -4,7 +4,7 @@ import { Project, Item } from '../v1/types';
 const itemSchema = new Schema<Item>({
     projectId: {
         required: true,
-        type: Schema.Types.ObjectId
+        type: String
     },
     name: {
         required: true,
@@ -29,7 +29,7 @@ const itemSchema = new Schema<Item>({
     },
     members: {
         required: true,
-        type: [Schema.Types.ObjectId],
+        type: [String],
         default: []
     },
     timeAllocated: {
@@ -53,7 +53,7 @@ const itemSchema = new Schema<Item>({
     },
     reviewers: {
         required: false,
-        type: [Schema.Types.ObjectId]
+        type: [String]
     },
     reviewState: {
         required: false,
@@ -65,22 +65,22 @@ const itemSchema = new Schema<Item>({
     },
     nestedItemIds: {
         required: true,
-        type: [Schema.Types.ObjectId],
+        type: [String],
         default: []
     },
     parentItemId: {
     required: true,
-        type: Schema.Types.ObjectId,
+        type: String,
         default: "topLevel"
     },
     predecessorItemIds: {
         required: true,
-        type: [Schema.Types.ObjectId],
+        type: [String],
         default: []
     },
     successorItemIds: {
         required: true,
-        type: [Schema.Types.ObjectId],
+        type: [String],
         default: []
     },
     itemObjects: {

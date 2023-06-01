@@ -12,4 +12,4 @@
     "display": "Recommended",
     "include": ["src/**/*"],
     "exclude": ["node_modules", "**/*.spec.ts"]
-  }
+}
