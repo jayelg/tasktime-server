@@ -36,14 +36,13 @@ export class OrgController {
     private readonly mailService: MailService,
   ) {}
 
-  // updated userService.getUser to return IUser
   @Get()
-  async getAllOrgs(@Req() req): Promise<string[]> {
-    const orgs = await this.userService.getAllOrgs(req.userId);
+  async getAllOrgs(@Req() req): Promise<IOrg[]> {
+    const { orgs } = await this.userService.getUser(req.userId);
     if (!orgs) {
       return [];
     }
-    return orgs;
+    return await this.orgService.getOrgs(req.userId, orgs);
   }
 
   @Post()
@@ -92,7 +91,13 @@ export class OrgController {
     @Param('orgId') orgId: string,
     @Body() newProject: CreateProjectDto,
   ): Promise<IProject> {
-    await this.orgService.getOrg(req.userId, orgId, 'orgProjectManager');
+    await this.orgService.authorizeUserForOrg(
+      {
+        _id: req.userId,
+        role: 'orgAdmin',
+      },
+      orgId,
+    );
     const project: IProject = await this.projectService.createProject(
       req.userId,
       orgId,
@@ -125,9 +130,14 @@ export class OrgController {
     @Param('orgId') orgId: string,
     @Body() newMemberData: NewMemberRequestDto,
   ) {
-    // check user is org admin
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const org = await this.orgService.getOrg(req.userId, orgId, 'orgAdmin');
+    await this.orgService.authorizeUserForOrg(
+      {
+        _id: req.userId,
+        role: 'orgAdmin',
+      },
+      orgId,
+    );
+    const org = await this.orgService.getOrg(req.userId, orgId);
     let newMember = await this.userService.findUserByEmail(newMemberData.email);
     let isNewUser = false;
     if (!newMember) {

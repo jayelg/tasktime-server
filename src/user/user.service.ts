@@ -43,11 +43,6 @@ export class UserService {
     return this.userDocToIUser(userDoc);
   }
 
-  async getAllOrgs(userId: string): Promise<string[]> {
-    const { orgs } = await this.users.findById(userId).populate('orgs');
-    return orgs.map((org) => org.toString());
-  }
-
   async createUser(email: string): Promise<IUser> {
     const formattedUser = new this.users({
       email: email,

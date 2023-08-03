@@ -45,14 +45,20 @@ export class OrgService {
     }
   }
 
-  private orgDoctoIOrg(orgDoc: OrgDocument): IOrg {
+  // public interface for the above method
+  async authorizeUserForOrg(member: MemberDto, orgId: string) {
+    await this.getOrgAndAuthorizeUser(member._id, orgId, member.role);
+  }
+
+  orgDoctoIOrg(orgDoc: OrgDocument): IOrg {
     const org: IOrg = {
       ...orgDoc.toJSON(),
       // convert all objectId types to strings
       _id: orgDoc._id.toString(),
+      // fix below seems to expose a lot more than necessery??
       members: orgDoc.members.map((member) => ({
-        ...member,
         _id: member._id.toString(),
+        role: member.role,
       })),
       projects: orgDoc.projects.map((projectId) => projectId.toString()),
     };
@@ -68,13 +74,22 @@ export class OrgService {
     }
   }
 
-  async getOrg(
-    userId: string,
-    orgId: string,
-    role = 'orgViewer',
-  ): Promise<IOrg> {
+  async getOrgs(userId: string, orgIds: string[]): Promise<IOrg[]> {
+    const orgDocs = await this.orgs.find({
+      _id: { $in: orgIds },
+      members: { $elemMatch: { _id: userId } },
+    });
+    const orgs = orgDocs.map((org) => this.orgDoctoIOrg(org));
+    return orgs;
+  }
+
+  async getOrg(userId: string, orgId: string): Promise<IOrg> {
     try {
-      const { orgDoc } = await this.getOrgAndAuthorizeUser(userId, orgId, role);
+      const { orgDoc } = await this.getOrgAndAuthorizeUser(
+        userId,
+        orgId,
+        'orgViewer',
+      );
       return this.orgDoctoIOrg(orgDoc);
     } catch (error) {
       if (error instanceof MongooseError) {
