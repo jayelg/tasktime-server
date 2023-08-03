@@ -60,6 +60,7 @@ export class OrgController {
 
   @Post()
   async createOrg(@Req() req, @Body() newOrg: CreateOrgDto): Promise<IOrg> {
+    await this.userService.updateUser(req.userId, { orgs: [newOrg.name] });
     return await this.orgService.createOrg(req.userId, newOrg);
   }
 
@@ -104,13 +105,7 @@ export class OrgController {
     @Param('orgId') orgId: string,
     @Body() newProject: CreateProjectDto,
   ): Promise<IProject> {
-    await this.orgService.authorizeUserForOrg(
-      {
-        _id: req.userId,
-        role: 'orgAdmin',
-      },
-      orgId,
-    );
+    await this.orgService.authorizeUserForOrg(req.userId, orgId, 'orgAdmin');
     const project: IProject = await this.projectService.createProject(
       req.userId,
       orgId,
@@ -143,13 +138,7 @@ export class OrgController {
     @Param('orgId') orgId: string,
     @Body() newMemberData: NewMemberRequestDto,
   ) {
-    await this.orgService.authorizeUserForOrg(
-      {
-        _id: req.userId,
-        role: 'orgAdmin',
-      },
-      orgId,
-    );
+    await this.orgService.authorizeUserForOrg(req.userId, orgId, 'orgAdmin');
     const org = await this.orgService.getOrg(req.userId, orgId);
     let newMember = await this.userService.findUserByEmail(newMemberData.email);
     let isNewUser = false;
@@ -233,13 +222,14 @@ export class OrgController {
     }
   }
 
-  @Delete(':orgId/members/:memberId')
+  @Delete(':orgId/member/:memberId')
   async removeMember(
     @Req() req,
     @Param('orgId') orgId: string,
     @Param('memberId') memberId: string,
   ) {
     try {
+      await this.orgService.authorizeUserForOrg(req.userId, orgId, 'orgAdmin');
       await this.orgService.removeMember(req.userId, orgId, memberId);
       await this.userService.removeOrg(orgId, memberId);
     } catch (error) {

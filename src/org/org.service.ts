@@ -25,8 +25,11 @@ export class OrgService {
     orgId: string,
     requiredLevel: string,
   ): Promise<{ orgDoc: OrgDocument; member: IMember }> {
-    const orgDoc = await this.orgs.findById(orgId);
-    if (orgDoc) {
+    try {
+      const orgDoc = await this.orgs.findById(orgId);
+      if (!orgDoc) {
+        throw new NotFoundException('org not found');
+      }
       const member = await this.getOrgMember(userId, this.orgDoctoIOrg(orgDoc));
       // the order defines the heirachy eg. admin has all user privilages
       const permissionLevels = [
@@ -42,12 +45,14 @@ export class OrgService {
       } else {
         return { orgDoc: orgDoc, member: member };
       }
+    } catch (error) {
+      throw error;
     }
   }
 
   // public interface for the above method
-  async authorizeUserForOrg(member: MemberDto, orgId: string) {
-    await this.getOrgAndAuthorizeUser(member._id, orgId, member.role);
+  async authorizeUserForOrg(memberId: string, orgId: string, role: string) {
+    await this.getOrgAndAuthorizeUser(memberId, orgId, role);
   }
 
   orgDoctoIOrg(orgDoc: OrgDocument): IOrg {
@@ -209,6 +214,9 @@ export class OrgService {
         orgId,
         'orgAdmin',
       );
+      if (!orgDoc) {
+        throw new NotFoundException('org not found');
+      }
       const memberIndex = orgDoc.members.findIndex(
         (m) => m._id.toString() === memberId,
       );
@@ -223,6 +231,7 @@ export class OrgService {
     }
   }
 
+  // auth either orgAdmin or projectAdmin
   async removeProject(userId: string, orgId: string, projectId: string) {
     try {
       await this.orgs
