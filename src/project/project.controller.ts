@@ -42,8 +42,13 @@ export class ProjectController {
     );
   }
 
+  // todo: does not delete from org
   @Delete(':projectId')
   async deleteProject(@Req() req, @Param('projectId') projectId: string) {
-    return await this.projectService.deleteProject(req.userId, projectId);
+    const project = await this.projectService.deleteProject(
+      req.userId,
+      projectId,
+    );
+    await this.orgService.removeProject(req.userId, project.org, projectId);
   }
 }

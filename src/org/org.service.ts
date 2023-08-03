@@ -222,4 +222,18 @@ export class OrgService {
       throw error;
     }
   }
+
+  async removeProject(userId: string, orgId: string, projectId: string) {
+    try {
+      await this.orgs
+        .findByIdAndUpdate(
+          orgId,
+          { $pull: { projects: projectId } },
+          { new: true },
+        )
+        .exec();
+    } catch (error) {
+      throw error;
+    }
+  }
 }

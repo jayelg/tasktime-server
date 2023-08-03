@@ -152,7 +152,8 @@ export class ProjectService {
         });
       }
       if (canDelete) {
-        await this.projects.findByIdAndDelete(projectId);
+        const project = await this.projects.findByIdAndDelete(projectId);
+        return this.projectDoctoIProject(project);
       } else {
         throw new UnauthorizedException();
       }
