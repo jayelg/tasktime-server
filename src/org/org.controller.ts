@@ -60,8 +60,9 @@ export class OrgController {
 
   @Post()
   async createOrg(@Req() req, @Body() newOrg: CreateOrgDto): Promise<IOrg> {
-    await this.userService.updateUser(req.userId, { orgs: [newOrg.name] });
-    return await this.orgService.createOrg(req.userId, newOrg);
+    const org = await this.orgService.createOrg(req.userId, newOrg);
+    await this.userService.updateUser(req.userId, { orgs: [org._id] });
+    return org;
   }
 
   @Get(':orgId')
