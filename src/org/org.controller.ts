@@ -7,6 +7,7 @@ import {
   Param,
   Body,
   Req,
+  NotFoundException,
 } from '@nestjs/common';
 
 //Services
@@ -205,6 +206,9 @@ export class OrgController {
     if (org) {
       const fullUser = await this.userService.findUserByEmail(body.email);
       const member = org.members.find((member) => member._id === fullUser._id);
+      if (!member) {
+        throw new NotFoundException('Member not found in organization.');
+      }
       return this.reduceMember(fullUser, member.role);
     }
   }
@@ -217,10 +221,11 @@ export class OrgController {
   ) {
     const org = await this.orgService.getOrg(req.userId, orgId);
     const member = org.members.find((member) => member._id === memberId);
-    if (member) {
-      const fullUser = await this.userService.getUser(memberId);
-      return this.reduceMember(fullUser, member.role);
+    if (!member) {
+      throw new NotFoundException('Member not found in organization.');
     }
+    const fullUser = await this.userService.getUser(memberId);
+    return this.reduceMember(fullUser, member.role);
   }
 
   @Delete(':orgId/member/:memberId')
