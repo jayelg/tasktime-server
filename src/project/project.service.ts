@@ -27,8 +27,8 @@ export class ProjectService {
       _id: projectDoc._id.toString(),
       org: projectDoc.org.toString(),
       members: projectDoc.members.map((member) => ({
-        ...member,
         _id: member._id.toString(),
+        role: member.role,
       })),
       events: projectDoc.events.map((eventId) => eventId.toString()),
       items: projectDoc.items.map((itemId) => itemId.toString()),
