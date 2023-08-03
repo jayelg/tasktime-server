@@ -25,6 +25,8 @@ import { CreateNotificationDto } from 'src/notification/dto/createNotification.d
 // Interface
 import { IOrg, IOrgServiceUpdates } from './interface/org.interface';
 import { IProject } from 'src/project/interface/project.interface';
+import { IUser } from 'src/user/interface/user.interface';
+import { MemberDto } from './dto/member.dto';
 
 @Controller('org')
 export class OrgController {
@@ -35,6 +37,17 @@ export class OrgController {
     private readonly notificationService: NotificationService,
     private readonly mailService: MailService,
   ) {}
+
+  private reduceMember(fullUser: IUser, role: string): MemberDto {
+    return {
+      _id: fullUser._id,
+      role: role,
+      email: fullUser.email,
+      firstName: fullUser.firstName,
+      lastName: fullUser.lastName,
+      avatar: fullUser.avatar,
+    };
+  }
 
   @Get()
   async getAllOrgs(@Req() req): Promise<IOrg[]> {
@@ -198,8 +211,11 @@ export class OrgController {
     @Param('orgId') orgId: string,
     @Body() body,
   ) {
-    if (await this.orgService.getOrg(req.userId, orgId)) {
-      return await this.userService.findUserByEmail(body.email);
+    const org = await this.orgService.getOrg(req.userId, orgId);
+    if (org) {
+      const fullUser = await this.userService.findUserByEmail(body.email);
+      const member = org.members.find((member) => member._id === fullUser._id);
+      return this.reduceMember(fullUser, member.role);
     }
   }
 
@@ -210,8 +226,10 @@ export class OrgController {
     @Param('memberId') memberId: string,
   ) {
     const org = await this.orgService.getOrg(req.userId, orgId);
-    if (org.members.some((member) => member._id === memberId)) {
-      return await this.userService.getUser(memberId);
+    const member = org.members.find((member) => member._id === memberId);
+    if (member) {
+      const fullUser = await this.userService.getUser(memberId);
+      return this.reduceMember(fullUser, member.role);
     }
   }
 

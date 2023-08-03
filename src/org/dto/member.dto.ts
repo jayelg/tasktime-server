@@ -1,4 +1,11 @@
-import { IsString, IsNotEmpty, IsIn, IsOptional, IsUrl } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsIn,
+  IsOptional,
+  IsUrl,
+  IsEmail,
+} from 'class-validator';
 import { IMember } from '../interface/member.interface';
 
 export class MemberDto implements IMember {
@@ -8,6 +15,11 @@ export class MemberDto implements IMember {
 
   @IsIn(['orgViewer', 'orgUser', 'orgProjectManager', 'orgAdmin'])
   role: string;
+
+  @IsOptional()
+  @IsEmail()
+  @IsNotEmpty()
+  email?: string;
 
   @IsOptional()
   @IsString()
@@ -21,5 +33,5 @@ export class MemberDto implements IMember {
 
   @IsOptional()
   @IsUrl()
-  avator?: string;
+  avatar?: string;
 }
