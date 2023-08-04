@@ -8,6 +8,7 @@ import {
   Body,
   Req,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 
 //Services
@@ -149,11 +150,12 @@ export class OrgController {
       newMember = await this.userService.createUser(newMemberData.email);
     }
 
-    if (!org.members.some((member) => member._id === newMember._id)) {
-      await this.orgService.updateOrg(req.userId, orgId, {
-        members: [{ _id: newMember._id, role: newMemberData.role }],
-      });
+    if (org.members.some((member) => member._id === newMember._id)) {
+      throw new ConflictException('User is already a member of organization');
     }
+    await this.orgService.updateOrg(req.userId, orgId, {
+      members: [{ _id: newMember._id, role: newMemberData.role }],
+    });
     const user = await this.userService.getUser(req.userId);
     const notificationTitle = `${
       user.firstName || user.firstName !== ''
