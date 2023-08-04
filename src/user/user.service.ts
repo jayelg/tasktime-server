@@ -58,7 +58,9 @@ export class UserService {
   }
 
   async updateUser(userId: string, updates: UpdateUserDto): Promise<IUser> {
-    const userDoc = await this.users.findByIdAndUpdate(userId, updates);
+    const userDoc = await this.users
+      .findByIdAndUpdate(userId, updates, { new: true })
+      .exec();
     return this.userDocToIUser(userDoc);
   }
 
@@ -69,10 +71,6 @@ export class UserService {
     );
     userDoc.unreadNotifications = updatedUnreadNotifications;
     return this.userDocToIUser(await userDoc.save());
-  }
-
-  async deleteUser(userId: string) {
-    await this.users.findByIdAndDelete(userId);
   }
 
   async removeOrg(userId: string, orgId: string) {
