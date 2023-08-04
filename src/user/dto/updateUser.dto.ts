@@ -4,6 +4,7 @@ import {
   IsUrl,
   IsOptional,
   IsArray,
+  IsBoolean,
 } from 'class-validator';
 import { IUpdateUser } from '../interface/updateUser.interface';
 
@@ -42,4 +43,9 @@ export class UpdateUserDto implements IUpdateUser {
   @IsArray()
   @IsNotEmpty()
   unreadMessages?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  @IsNotEmpty()
+  disabled?: boolean;
 }

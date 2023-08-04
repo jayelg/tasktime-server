@@ -31,9 +31,16 @@ export class UserController {
     return await this.userService.updateUser(req.userId, updates);
   }
 
-  @Delete()
-  async deleteUser(@Req() req) {
-    await this.userService.deleteUser(req.userId);
+  @Patch('disable')
+  async disableUser(@Req() req) {
+    // send confirmation email
+    await this.userService.updateUser(req.userId, { disabled: true });
+  }
+
+  @Patch('enable')
+  async enableUser(@Req() req) {
+    // send confirmation email
+    await this.userService.updateUser(req.userId, { disabled: false });
   }
 
   @Patch('readNotification/:notificationId')

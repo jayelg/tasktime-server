@@ -56,6 +56,9 @@ export class User {
 
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Message' }] })
   unreadMessages: mongoose.Types.ObjectId[];
+
+  @Prop()
+  disabled: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -10,4 +10,5 @@ export interface IUser {
   lastLoginAt: string;
   unreadNotifications: string[];
   unreadMessages: string[];
+  disabled: boolean;
 }
