@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsUrl,
   IsEmail,
+  IsBoolean,
 } from 'class-validator';
 import { IMember } from '../interface/member.interface';
 
@@ -34,4 +35,8 @@ export class MemberDto implements IMember {
   @IsOptional()
   @IsUrl()
   avatar?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  disabled?: boolean;
 }

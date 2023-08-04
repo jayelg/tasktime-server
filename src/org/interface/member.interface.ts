@@ -5,4 +5,5 @@ export interface IMember {
   firstName?: string;
   lastName?: string;
   avatar?: string;
+  disabled?: boolean;
 }

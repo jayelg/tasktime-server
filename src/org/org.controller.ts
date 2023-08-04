@@ -48,6 +48,7 @@ export class OrgController {
       firstName: fullUser.firstName,
       lastName: fullUser.lastName,
       avatar: fullUser.avatar,
+      disabled: fullUser.disabled,
     };
   }
 
