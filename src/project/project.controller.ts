@@ -9,18 +9,19 @@ import {
   Req,
 } from '@nestjs/common';
 import { ProjectService } from './project.service';
-import { Project } from './project.schema';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { newProject } from './project.interface';
 import { OrgService } from 'src/org/org.service';
-import mongoose from 'mongoose';
 import { UpdateProjectDto } from './project.dto';
+import { ItemService } from 'src/item/item.service';
+import { NewItemDto } from 'src/item/dto/newItem.dto';
 
 @Controller('project')
 export class ProjectController {
   constructor(
     private readonly projectService: ProjectService,
     private readonly orgService: OrgService,
+    private readonly itemService: ItemService,
   ) {}
 
   @Get(':projectId')
@@ -42,7 +43,6 @@ export class ProjectController {
     );
   }
 
-  // todo: does not delete from org
   @Delete(':projectId')
   async deleteProject(@Req() req, @Param('projectId') projectId: string) {
     const project = await this.projectService.deleteProject(
@@ -50,5 +50,18 @@ export class ProjectController {
       projectId,
     );
     await this.orgService.removeProject(req.userId, project.org, projectId);
+  }
+
+  @Post(':projectId/newItem')
+  async newItem(
+    @Req() req,
+    @Param('projectId') projectId: string,
+    @Body() newItem: NewItemDto,
+  ) {
+    const project = await this.itemService.createItem(
+      req.userId,
+      projectId,
+      newItem,
+    );
   }
 }
