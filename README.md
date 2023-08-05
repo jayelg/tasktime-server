@@ -16,6 +16,12 @@ The tasktime backend service provides a REST API with validation, authentication
 
 [Mongoose](https://mongoosejs.com/) - MongoDB
 
+## First Prototype
+
+I initially started building this using pure express which can be viewed at the following banch of this repo.
+
+[Express branch](https://github.com/jayelg/tasktime-server/tree/express)
+
 ## Enviroment
 
 create a .env file in the root of the project with the following parameters.
