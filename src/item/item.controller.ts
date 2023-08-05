@@ -6,16 +6,18 @@ import {
   Delete,
   Param,
   Body,
+  Req,
 } from '@nestjs/common';
 import { ItemService } from './item.service';
 import { Item } from './item.schema';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { newItem } from './item.interface';
+import { NewItemDto } from './dto/newItem.dto';
 
 @Controller('org/:orgId/projects/:projectId/items')
 export class ItemController {
   constructor(private itemService: ItemService) {}
 
+  // replace with class-validator dto
   private checkRequest(
     requiredProps: string[],
     request: any,
@@ -69,13 +71,18 @@ export class ItemController {
 
   @Post()
   async createItem(
+    @Req() req,
     @Param('projectId') projectId: string,
-    @Body() newItem: newItem,
+    @Body() newItem: NewItemDto,
   ) {
     const requiredProps = ['name', 'creator', 'colour'];
     const optionalProps = ['parentItemId', 'predecessorItemId'];
     this.checkRequest(requiredProps, newItem, optionalProps);
-    const createdItem = await this.itemService.createItem(projectId, newItem);
+    const createdItem = await this.itemService.createItem(
+      req.userId,
+      projectId,
+      newItem,
+    );
 
     // update parent nested item relationships
     if (createdItem.parentItemId.toString() !== projectId) {

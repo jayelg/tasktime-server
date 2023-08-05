@@ -2,8 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Item } from './item.schema';
 import { Project } from '../project/project.schema';
-import mongoose, { Model } from 'mongoose';
-import { newItem } from './item.interface';
+import mongoose, { Model, Types } from 'mongoose';
+import { NewItemDto } from './dto/newItem.dto';
 
 @Injectable()
 export class ItemService {
@@ -35,16 +35,25 @@ export class ItemService {
     return item;
   }
 
-  async createItem(projectId: string, newItem: newItem) {
+  async createItem(userId: string, projectId: string, newItem: NewItemDto) {
     const formattedItem = await this.items.create({
-      projectId: projectId,
+      projectId: new Types.ObjectId(projectId),
       name: newItem.name,
-      creator: newItem.creator,
-      colour: newItem.colour,
-      parentItemId: newItem.parentItemId || projectId,
-      predecessorItemId: newItem.predecessorItemId,
+      creator: new Types.ObjectId(userId),
+      description: newItem.description || '',
       createdAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
       updatedAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
+      allocatedTo: newItem.allocatedTo
+        ? newItem.allocatedTo.map(
+            (allocatedUser) => new Types.ObjectId(allocatedUser),
+          )
+        : [new Types.ObjectId(userId)], // fallback to userId if none provided
+      timeAllocated: newItem.timeAllocated,
+      colour: newItem.colour,
+      parentItemId: new Types.ObjectId(newItem.parentItemId || projectId),
+      predecessorItemId: new Types.ObjectId(
+        newItem.predecessorItemId || projectId,
+      ),
     });
 
     try {

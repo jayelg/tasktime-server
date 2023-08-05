@@ -35,7 +35,7 @@ export class Item {
     required: true,
     default: () => [],
   })
-  members: mongoose.Types.ObjectId[];
+  allocatedTo: mongoose.Types.ObjectId[];
 
   @Prop({
     required: false,
