@@ -1,35 +1,36 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Tasktime Server
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+The tasktime backend service provides a REST API with validation, authentication and authorization for the tasktime app.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Some of the tech used
 
-## Description
+[Typescript](https://www.typescriptlang.org/)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+[Nest js](https://www.passportjs.org/packages/passport-magic-login/) - Node.js backend framework implementing express js
 
-## Installation
+[Passport with magic login](https://www.passportjs.org/packages/passport-magic-login/) - Passwordless authentication using magic links sent to users email address.
+
+[Handlebars](https://handlebarsjs.com/) - Templating lanugage to dynamicly generate static html/css for use in emails
+
+[Maizzle](https://maizzle.com) - Framework for creating HTML/CSS packages using tailwindCSS. This is configured to generate handlebars templates
+
+[Mongoose](https://mongoosejs.com/) - MongoDB
+
+## Enviroment
+
+create a .env file in the root of the project with the following parameters.
 
 ```bash
-$ npm install
+APP_NAME = 'tasktime server'
+SERVER_URL = http://localhost
+DATABASE_URL = mongodb+srv://user:password@somedatabase.mongodb.net/
+PORT = 3000
+JWT_SECRET_KEY = dc3ad6lkrrZ-generatedLongSecretKey-e3iicl60sxhh
+SMTP_URL = smtp.sendgridOrMailgun.com
+SMTP_PORT = 587
+SMTP_USER = postmaster@mail.com
+SMTP_PASS = dc3ad6lkrrZ-SMTPPassword-e3iicl60sxhh
+SMTP_FROM_ADDRESS = support@mail.com
 ```
 
 ## Running the app
@@ -58,16 +59,7 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
-## Support
+## Use
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+There is no license on this project and so all copyright protections are reserved.
+Please contact me at john@raur.net if you would like to use this project.
