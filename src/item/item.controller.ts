@@ -12,8 +12,10 @@ import { ItemService } from './item.service';
 import { Item } from './item.schema';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { NewItemDto } from './dto/newItem.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @Controller('org/:orgId/projects/:projectId/items')
+@ApiTags('items')
 export class ItemController {
   constructor(private itemService: ItemService) {}
 

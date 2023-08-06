@@ -29,8 +29,11 @@ import { IOrg, IOrgServiceUpdates } from './interface/org.interface';
 import { IProject } from 'src/project/interface/project.interface';
 import { IUser } from 'src/user/interface/user.interface';
 import { MemberDto } from './dto/member.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { OrgDto } from './dto/org.dto';
 
 @Controller('org')
+@ApiTags('org')
 export class OrgController {
   constructor(
     private readonly userService: UserService,
@@ -53,7 +56,13 @@ export class OrgController {
   }
 
   @Get()
-  async getAllOrgs(@Req() req): Promise<IOrg[]> {
+  @ApiOperation({ summary: 'Get all organizations' })
+  @ApiResponse({
+    status: 200,
+    description: 'Array of organizations',
+    type: [OrgDto],
+  })
+  async getAllOrgs(@Req() req): Promise<OrgDto[]> {
     const { orgs } = await this.userService.getUser(req.userId);
     if (!orgs) {
       return [];
@@ -69,7 +78,9 @@ export class OrgController {
   }
 
   @Get(':orgId')
-  async getOrg(@Req() req, @Param('orgId') orgId: string): Promise<IOrg> {
+  @ApiOperation({ summary: 'Get an organization by ID' })
+  @ApiResponse({ status: 200, description: 'The organization', type: OrgDto })
+  async getOrg(@Req() req, @Param('orgId') orgId: string): Promise<OrgDto> {
     return await this.orgService.getOrg(req.userId, orgId);
   }
 

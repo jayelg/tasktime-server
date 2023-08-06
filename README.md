@@ -2,29 +2,37 @@
 
 The tasktime backend service provides a REST API with validation, authentication and authorization for the tasktime app.
 
-## Some of the tech used
+## Some of the tech and packages used
 
-[Typescript](https://www.typescriptlang.org/)
+The full list of packages used can be seen in the [package.json](https://github.com/jayelg/tasktime-server/blob/main/package.json) file.
 
-[Nest js](https://www.passportjs.org/packages/passport-magic-login/) - Node.js backend framework implementing express js
+written in [Typescript](https://www.typescriptlang.org/)
+
+[Nest js](https://www.passportjs.org/packages/passport-magic-login/) - module based backend Node.js framework providing modules for express js, jest, jwt, class-validator, mailer, among others.
 
 [Passport with magic login](https://www.passportjs.org/packages/passport-magic-login/) - Passwordless authentication using magic links sent to users email address.
 
-[Handlebars](https://handlebarsjs.com/) - Templating lanugage to dynamicly generate static html/css for use in emails
+[Handlebars](https://handlebarsjs.com/) - Templating lanugage to dynamicly generate static html/css. Used to send email sign-in links, notifications etc.
 
 [Maizzle](https://maizzle.com) - Framework for creating HTML/CSS packages using tailwindCSS. This is configured to generate handlebars templates
 
 [Mongoose](https://mongoosejs.com/) - MongoDB
 
+[Swagger](https://mongoosejs.com/) - API Documentation
+
 ## First Prototype
 
-I initially started building this using pure express which can be viewed at the following banch of this repo.
+I initially started building this using express js which can be viewed at the following branch of this repo.
 
 [Express branch](https://github.com/jayelg/tasktime-server/tree/express)
 
-## Enviroment
+## Running the server
 
-create a .env file in the root of the project with the following parameters.
+Ensure Node.js and npm package manager is installed.
+
+Pull the project from git.
+
+create a .env file in the root directory of the project with the following parameters.
 
 ```bash
 APP_NAME = 'tasktime server'
@@ -39,13 +47,10 @@ SMTP_PASS = dc3ad6lkrrZ-SMTPPassword-e3iicl60sxhh
 SMTP_FROM_ADDRESS = support@mail.com
 ```
 
-## Running the app
+Use of of the following commands to run the server.
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
+# dev mode watching for changes
 $ npm run start:dev
 
 # production mode

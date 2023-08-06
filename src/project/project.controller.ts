@@ -15,8 +15,10 @@ import { OrgService } from 'src/org/org.service';
 import { UpdateProjectDto } from './project.dto';
 import { ItemService } from 'src/item/item.service';
 import { NewItemDto } from 'src/item/dto/newItem.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @Controller('project')
+@ApiTags('project')
 export class ProjectController {
   constructor(
     private readonly projectService: ProjectService,

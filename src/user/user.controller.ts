@@ -10,10 +10,12 @@ import {
 import { UserService } from './user.service';
 import { NotificationService } from 'src/notification/notification.service';
 import { UpdateUserRequestDto } from './dto/updateUserRequest.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 // This endpoint is used for own user profile
 // Other users can be accessed through the 'org/:orgId/members/' endpoint
 @Controller('user')
+@ApiTags('user')
 export class UserController {
   constructor(
     private readonly userService: UserService,
