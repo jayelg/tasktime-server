@@ -151,8 +151,8 @@ export class UserService {
 
   @OnEvent('notification.memberInvited', { async: true })
   async addUnreadNotification(payload: NotificationMemberInvitedEvent) {
-    await this.updateUser(payload.userId, {
-      unreadNotifications: [payload.notificationId],
+    await this.updateUser(payload.notification.user, {
+      unreadNotifications: [payload.notification._id],
     });
   }
 }
