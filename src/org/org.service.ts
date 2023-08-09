@@ -261,6 +261,7 @@ export class OrgService {
           org.name,
           new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
           payload.invitedByUserId,
+          payload.invitedByName,
         ),
       );
     } catch (error) {
