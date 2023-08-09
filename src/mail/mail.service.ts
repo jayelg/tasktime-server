@@ -22,7 +22,7 @@ export class MailService {
   }
 
   async sendMagicLink(email: string, url: string) {
-    const user: IUser = await this.userService.findUserByEmail(email);
+    const user: IUser = await this.userService.getUserByEmail(email);
     const greeting = () => {
       if (user) {
         if (user.firstName !== '') {
