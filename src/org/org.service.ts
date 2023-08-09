@@ -11,10 +11,12 @@ import { Org, OrgDocument } from './org.schema';
 import { IOrg, IOrgServiceUpdates } from './interface/org.interface';
 import { IMember } from './interface/member.interface';
 import { CreateOrgDto } from './dto/createOrg.dto';
-import { MemberDto } from './dto/member.dto';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { OrgCreatedEvent } from './event/orgCreated.event';
 import { ProjectCreatedEvent } from 'src/project/event/projectCreated.event';
+import { NewMemberRequestDto } from './dto/newMemberRequest.dto';
+import { MemberInvitedEvent } from './event/memberInvited.event';
+import { UserInvitedToOrgEvent } from 'src/user/event/userInvitedToOrg.event';
 
 @Injectable()
 export class OrgService {
@@ -115,10 +117,8 @@ export class OrgService {
     }
   }
 
-  // any user can create their own org
   async createOrg(userId: string, newOrg: CreateOrgDto): Promise<IOrg> {
     try {
-      // const user = await this.users.findById(userId); // get user._id ObjectId
       const formattedOrg = new this.orgs({
         name: newOrg.name,
         members: [{ _id: new Types.ObjectId(userId), role: 'orgAdmin' }],
@@ -162,24 +162,6 @@ export class OrgService {
     try {
       await this.getOrgAndAuthorizeUser(userId, orgId, 'orgAdmin');
       await this.orgs.findByIdAndDelete(orgId);
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async inviteMember(userId: string, orgId: string, newMember: MemberDto) {
-    try {
-      const { orgDoc } = await this.getOrgAndAuthorizeUser(
-        userId,
-        orgId,
-        'orgAdmin',
-      );
-      const newMemberObjectId = new Types.ObjectId(newMember._id);
-      orgDoc.members.push({
-        _id: newMemberObjectId,
-        role: newMember.role,
-      });
-      return this.orgDoctoIOrg(await orgDoc.save());
     } catch (error) {
       throw error;
     }
@@ -252,6 +234,37 @@ export class OrgService {
       throw new InternalServerErrorException(
         'There was an error removing project to org',
       );
+    }
+  }
+
+  @OnEvent('user.invitedToOrg', { async: true })
+  async inviteMember(payload: UserInvitedToOrgEvent) {
+    try {
+      // Auth should happen before user is created
+      const { orgDoc } = await this.getOrgAndAuthorizeUser(
+        payload.invitedByUserId,
+        payload.orgId,
+        'orgAdmin',
+      );
+      const newMemberObjectId = new Types.ObjectId(payload.inviteeUserId);
+      orgDoc.members.push({
+        _id: newMemberObjectId,
+        role: payload.role,
+      });
+      const org = this.orgDoctoIOrg(await orgDoc.save());
+      this.eventEmitter.emit(
+        'org.memberInvited',
+        new MemberInvitedEvent(
+          payload.inviteeEmail,
+          payload.role,
+          org._id,
+          org.name,
+          new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
+          payload.invitedByUserId,
+        ),
+      );
+    } catch (error) {
+      throw error;
     }
   }
 }
