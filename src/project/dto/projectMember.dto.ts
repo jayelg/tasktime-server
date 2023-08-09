@@ -1,4 +1,5 @@
 import { IsString, IsNotEmpty, IsIn } from 'class-validator';
+import { orgMemberRole } from '../enum/memberRole.enum';
 
 export class ProjectMemberDto {
   @IsString()
@@ -7,6 +8,6 @@ export class ProjectMemberDto {
 
   @IsString()
   @IsNotEmpty()
-  @IsIn(['projectViewer', 'projectUser', 'projectAdmin'])
+  @IsIn([...Object.values(orgMemberRole)])
   role: string;
 }
