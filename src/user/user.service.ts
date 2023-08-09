@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { User, UserDocument } from './user.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { IUser } from './interface/user.interface';
 import { UpdateUserDto } from './dto/updateUser.dto';
@@ -11,6 +11,7 @@ import { UserRemovedUnreadNotificationEvent } from './event/UserRemovedUnreadNot
 import { UserCreatedEvent } from './event/userCreated.event';
 import { UserInvitedToOrgEvent } from './event/userInvitedToOrg.event';
 import { InviteToOrgDto } from './dto/inviteToOrg.dto';
+import { NotificationMemberInvitedEvent } from 'src/notification/event/notificationMemberInvited.event';
 
 @Injectable()
 export class UserService {
@@ -95,6 +96,33 @@ export class UserService {
     return user;
   }
 
+  async handleInvitedOrgMember(
+    userId: string,
+    orgId: string,
+    inviteData: InviteToOrgDto,
+  ) {
+    // get/create invitee user
+    let invitedUser = await this.getUserByEmail(inviteData.email);
+    if (!invitedUser) {
+      invitedUser = await this.createUser(inviteData.email);
+    }
+    // get inviting user
+    const invitedBy = this.userDocToIUser(await this.users.findById(userId));
+    // event: recieved by org to add user to org
+    this.eventEmitter.emit(
+      'user.invitedToOrg',
+      new UserInvitedToOrgEvent(
+        invitedUser._id,
+        invitedUser.email,
+        orgId,
+        inviteData.role,
+        new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
+        invitedBy._id,
+        invitedBy.firstName,
+      ),
+    );
+  }
+
   // Event Listeners
 
   @OnEvent('org.created', { async: true })
@@ -121,30 +149,10 @@ export class UserService {
     return null;
   }
 
-  async handleInvitedOrgMember(
-    userId: string,
-    orgId: string,
-    inviteData: InviteToOrgDto,
-  ) {
-    // get/create invitee user
-    let invitedUser = await this.getUserByEmail(inviteData.email);
-    if (!invitedUser) {
-      invitedUser = await this.createUser(inviteData.email);
-    }
-    // get inviting user
-    const invitedBy = this.userDocToIUser(await this.users.findById(userId));
-    // event: recieved by org to add user to org
-    this.eventEmitter.emit(
-      'user.invitedToOrg',
-      new UserInvitedToOrgEvent(
-        invitedUser._id,
-        invitedUser.email,
-        orgId,
-        inviteData.role,
-        new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-        invitedBy._id,
-        invitedBy.firstName,
-      ),
-    );
+  @OnEvent('notification.memberInvited', { async: true })
+  async addUnreadNotification(payload: NotificationMemberInvitedEvent) {
+    await this.updateUser(payload.userId, {
+      unreadNotifications: [payload.notificationId],
+    });
   }
 }
