@@ -1,7 +1,9 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { OnEvent } from '@nestjs/event-emitter';
 import { Types } from 'mongoose';
+import { NotificationMemberInvitedEvent } from 'src/notification/event/notificationMemberInvited.event';
 import { INotification } from 'src/notification/interface/notification.interface';
 import { NotificationDocument } from 'src/notification/notification.schema';
 import { IUser } from 'src/user/interface/user.interface';
@@ -47,15 +49,16 @@ export class MailService {
     });
   }
 
-  async sendNotification(user, notification: INotification, newUser: boolean) {
+  @OnEvent('notification.memberInvited', { async: true })
+  async sendNotification(payload: NotificationMemberInvitedEvent) {
     await this.mailerService.sendMail({
-      to: user.email,
-      subject: notification.title,
+      to: payload.inviteeEmail,
+      subject: payload.notification.title,
       template: './notification',
       context: {
-        title: notification.title,
-        body: notification.body,
-        button: notification.button,
+        title: payload.notification.title,
+        body: payload.notification.body,
+        button: payload.notification.button,
         url: 'url',
         appName: this.appName,
         appUrl: this.appUrl,
