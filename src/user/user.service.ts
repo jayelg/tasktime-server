@@ -9,6 +9,8 @@ import { OrgCreatedEvent } from 'src/org/event/orgCreated.event';
 import { OrgRemovedEvent } from 'src/org/event/orgRemoved.event';
 import { UserRemovedUnreadNotificationEvent } from './event/UserRemovedUnreadNotification.event';
 import { UserCreatedEvent } from './event/userCreated.event';
+import { UserInvitedToOrgEvent } from './event/userInvitedToOrg.event';
+import { InviteToOrgDto } from './dto/inviteToOrg.dto';
 
 @Injectable()
 export class UserService {
@@ -39,7 +41,7 @@ export class UserService {
   }
 
   // used to lookup user during authentication
-  async findUserByEmail(email: string): Promise<IUser> {
+  async getUserByEmail(email: string): Promise<IUser> {
     const userDoc = await this.users.findOne({ email: email });
     return this.userDocToIUser(userDoc);
   }
@@ -117,5 +119,32 @@ export class UserService {
       }
     }
     return null;
+  }
+
+  async handleInvitedOrgMember(
+    userId: string,
+    orgId: string,
+    inviteData: InviteToOrgDto,
+  ) {
+    // get/create invitee user
+    let invitedUser = await this.getUserByEmail(inviteData.email);
+    if (!invitedUser) {
+      invitedUser = await this.createUser(inviteData.email);
+    }
+    // get inviting user
+    const invitedBy = this.userDocToIUser(await this.users.findById(userId));
+    // event: recieved by org to add user to org
+    this.eventEmitter.emit(
+      'user.invitedToOrg',
+      new UserInvitedToOrgEvent(
+        invitedUser._id,
+        invitedUser.email,
+        orgId,
+        inviteData.role,
+        new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
+        invitedBy._id,
+        invitedBy.firstName,
+      ),
+    );
   }
 }
