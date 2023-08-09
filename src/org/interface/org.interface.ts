@@ -4,8 +4,6 @@ import { IMember } from './member.interface';
 export interface IOrgServiceUpdates {
   name?: string;
   description?: string;
-  members?: IMember[];
-  projects?: string[];
 }
 
 export interface IOrg {

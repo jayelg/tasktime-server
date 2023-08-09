@@ -3,21 +3,24 @@ import {
   NotFoundException,
   NotAcceptableException,
   ServiceUnavailableException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, MongooseError, Types } from 'mongoose';
-import { User } from 'src/user/user.schema';
 import { Org, OrgDocument } from './org.schema';
 import { IOrg, IOrgServiceUpdates } from './interface/org.interface';
 import { IMember } from './interface/member.interface';
 import { CreateOrgDto } from './dto/createOrg.dto';
 import { MemberDto } from './dto/member.dto';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { OrgCreatedEvent } from './event/orgCreated.event';
+import { ProjectCreatedEvent } from 'src/project/event/projectCreated.event';
 
 @Injectable()
 export class OrgService {
   constructor(
     @InjectModel('Org') private readonly orgs: Model<Org>,
-    @InjectModel('User') private readonly users: Model<User>, // should be done in controller calling user service.
+    private eventEmitter: EventEmitter2,
   ) {}
 
   private async getOrgAndAuthorizeUser(
@@ -115,20 +118,20 @@ export class OrgService {
   // any user can create their own org
   async createOrg(userId: string, newOrg: CreateOrgDto): Promise<IOrg> {
     try {
-      const user = await this.users.findById(userId); // get user._id ObjectId
+      // const user = await this.users.findById(userId); // get user._id ObjectId
       const formattedOrg = new this.orgs({
         name: newOrg.name,
-        members: [{ _id: user._id, role: 'orgAdmin' }],
+        members: [{ _id: new Types.ObjectId(userId), role: 'orgAdmin' }],
         createdAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
         updatedAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
       });
       const createdOrgDoc = await formattedOrg.save();
-      const createdOrg = this.orgDoctoIOrg(createdOrgDoc);
-      // Update user
-      user.orgs.push(createdOrgDoc._id);
-      await user.save();
-
-      return createdOrg;
+      const org = this.orgDoctoIOrg(createdOrgDoc);
+      this.eventEmitter.emit(
+        'org.created',
+        new OrgCreatedEvent(org._id, org.name, org.createdAt, userId),
+      );
+      return org;
     } catch (error) {
       // todo: log error
       throw error;
@@ -146,31 +149,6 @@ export class OrgService {
         orgId,
         'orgAdmin',
       );
-      // handle projects array
-      if ('projects' in orgUpdates) {
-        if (!orgDoc.projects) {
-          orgDoc.projects = [];
-        }
-        const projectUpdates = orgUpdates.projects.map(
-          (id) => new Types.ObjectId(id),
-        );
-        orgDoc.projects = orgDoc.projects.concat(projectUpdates);
-        delete orgUpdates.projects;
-      }
-      // handle members array
-      if ('members' in orgUpdates && Array.isArray(orgUpdates.members)) {
-        if (!orgDoc.members) {
-          orgDoc.members = [];
-        }
-        const newMembers = orgUpdates.members.map((member) => {
-          return {
-            _id: new Types.ObjectId(member._id),
-            role: member.role,
-          };
-        });
-        orgDoc.members.push(...newMembers);
-        delete orgUpdates.members;
-      }
       Object.assign(orgDoc, orgUpdates);
       const updatedOrg = await orgDoc.save();
       return this.orgDoctoIOrg(updatedOrg);
@@ -243,6 +221,37 @@ export class OrgService {
         .exec();
     } catch (error) {
       throw error;
+    }
+  }
+
+  // Event Listeners
+  @OnEvent('project.created', { async: true })
+  async projectCreated(payload: ProjectCreatedEvent) {
+    try {
+      await this.orgs.findByIdAndUpdate(
+        payload.orgId,
+        { $push: { projects: payload.projectId } },
+        { new: true },
+      );
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'There was an error adding project to org',
+      );
+    }
+  }
+
+  @OnEvent('project.deleted', { async: true })
+  async projectDeleted(payload: ProjectCreatedEvent) {
+    try {
+      await this.orgs.findByIdAndUpdate(
+        payload.orgId,
+        { $pull: { projects: payload.projectId } },
+        { new: true },
+      );
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'There was an error removing project to org',
+      );
     }
   }
 }
