@@ -1,26 +1,15 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Req,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Req } from '@nestjs/common';
 import { UserService } from './user.service';
-import { NotificationService } from 'src/notification/notification.service';
 import { UpdateUserRequestDto } from './dto/updateUserRequest.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { OrgDto } from 'src/org/dto/org.dto';
 
 // This endpoint is used for own user profile
 // Other users can be accessed through the 'org/:orgId/members/' endpoint
 @Controller('user')
 @ApiTags('user')
 export class UserController {
-  constructor(
-    private readonly userService: UserService,
-    private readonly notificationService: NotificationService,
-  ) {}
+  constructor(private readonly userService: UserService) {}
 
   @Get()
   async getProfile(@Req() req) {
@@ -45,12 +34,26 @@ export class UserController {
     await this.userService.updateUser(req.userId, { disabled: false });
   }
 
+  @Get('allorgs')
+  @ApiOperation({ summary: 'Get all organizations' })
+  @ApiResponse({
+    status: 200,
+    description: 'Array of organizations',
+    type: [OrgDto],
+  })
+  async getAllOrgs(@Req() req): Promise<string[]> {
+    const { orgs } = await this.userService.getUser(req.userId);
+    if (!orgs) {
+      return [];
+    }
+    return orgs;
+  }
+
   @Patch('readNotification/:notificationId')
   async markNotificationRead(
     @Req() req,
     @Param('notificationId') notificationId: string,
   ) {
     await this.userService.removeUnreadNotification(req.userId, notificationId);
-    await this.notificationService.updateUnread(notificationId, false);
   }
 }

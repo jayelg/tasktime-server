@@ -4,12 +4,18 @@ import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { IUser } from './interface/user.interface';
 import { UpdateUserDto } from './dto/updateUser.dto';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { OrgCreatedEvent } from 'src/org/event/orgCreated.event';
+import { OrgRemovedEvent } from 'src/org/event/orgRemoved.event';
+import { UserRemovedUnreadNotificationEvent } from './event/UserRemovedUnreadNotification.event';
+import { UserCreatedEvent } from './event/userCreated.event';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel('User')
     private readonly users: Model<User>,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   private userDocToIUser(userDoc: UserDocument): IUser {
@@ -50,7 +56,12 @@ export class UserService {
     });
     try {
       const userDoc = await formattedUser.save();
-      return this.userDocToIUser(userDoc);
+      const user = this.userDocToIUser(userDoc);
+      this.eventEmitter.emit(
+        'user.created',
+        new UserCreatedEvent(user._id, user.email, user.createdAt),
+      );
+      return user;
     } catch (error) {
       // todo: log error
       throw error;
@@ -70,13 +81,36 @@ export class UserService {
       (note) => note.toString() !== notificationId,
     );
     userDoc.unreadNotifications = updatedUnreadNotifications;
-    return this.userDocToIUser(await userDoc.save());
+    const user = this.userDocToIUser(await userDoc.save());
+    this.eventEmitter.emit(
+      'user.removedUnreadNotification',
+      new UserRemovedUnreadNotificationEvent(
+        notificationId,
+        userId,
+        new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
+      ),
+    );
+    return user;
   }
 
-  async removeOrg(userId: string, orgId: string) {
-    const userDoc = await this.users.findById(userId);
+  // Event Listeners
+
+  @OnEvent('org.created', { async: true })
+  async addOrg(payload: OrgCreatedEvent) {
+    await this.users.findByIdAndUpdate(
+      payload.createdBy,
+      { $addToSet: { orgs: payload.orgId } },
+      { new: true },
+    );
+  }
+
+  @OnEvent('org.removed', { async: true })
+  async removeOrg(payload: OrgRemovedEvent) {
+    const userDoc = await this.users.findById(payload.removedBy);
     if (userDoc) {
-      const orgIndex = userDoc.orgs.findIndex((org) => org.equals(orgId));
+      const orgIndex = userDoc.orgs.findIndex((org) =>
+        org.equals(payload.orgId),
+      );
       if (orgIndex !== -1) {
         userDoc.orgs.splice(orgIndex, 1);
         return this.userDocToIUser(await userDoc.save());
