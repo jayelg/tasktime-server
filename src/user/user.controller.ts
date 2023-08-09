@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Param, Patch, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Req } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserRequestDto } from './dto/updateUserRequest.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrgDto } from 'src/org/dto/org.dto';
+import { InviteToOrgDto } from './dto/inviteToOrg.dto';
 
 // This endpoint is used for own user profile
 // Other users can be accessed through the 'org/:orgId/members/' endpoint
@@ -55,5 +56,18 @@ export class UserController {
     @Param('notificationId') notificationId: string,
   ) {
     await this.userService.removeUnreadNotification(req.userId, notificationId);
+  }
+
+  @Post('inviteTo/:orgId')
+  async inviteUserToOrg(
+    @Req() req,
+    @Param('orgId') orgId: string,
+    @Body() inviteData: InviteToOrgDto,
+  ) {
+    await this.userService.handleInvitedOrgMember(
+      req.userId,
+      orgId,
+      inviteData,
+    );
   }
 }
