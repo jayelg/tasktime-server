@@ -19,7 +19,7 @@ export class JwtMiddleware implements NestMiddleware {
           _id: string;
           email: string;
         };
-        req.userId = _id.toString();
+        req.userId = _id;
         req.email = email;
       } catch (err) {
         // Handle JWT verification error
