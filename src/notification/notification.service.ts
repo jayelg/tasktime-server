@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Notification, NotificationDocument } from './notification.schema';
 import mongoose, { Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
@@ -8,6 +12,7 @@ import { IUser } from 'src/user/interface/user.interface';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { MemberInvitedEvent } from 'src/org/event/memberInvited.event';
 import { NotificationMemberInvitedEvent } from './event/notificationMemberInvited.event';
+import { NotificationDeletedEvent } from './event/notificationDeleted.event';
 
 @Injectable()
 export class NotificationService {
@@ -97,10 +102,17 @@ export class NotificationService {
 
   async deleteNotification(user: IUser, notificationId: string): Promise<void> {
     try {
-      const notification = await this.notifications.findById(notificationId);
-      if (notification.user.equals(user._id)) {
-        await this.notifications.findByIdAndDelete(notificationId);
+      const notification = this.NotificationDocToINotification(
+        await this.notifications.findById(notificationId),
+      );
+      if (!(notification.user === user._id)) {
+        throw new UnauthorizedException();
       }
+      await this.notifications.findByIdAndDelete(notificationId);
+      this.eventEmitter.emit(
+        'notification.deleted',
+        new NotificationDeletedEvent(notification),
+      );
     } catch (error) {
       throw new NotFoundException(this.notFoundError);
     }
