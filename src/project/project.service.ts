@@ -161,4 +161,21 @@ export class ProjectService {
       throw error;
     }
   }
+
+  // needs to check auth
+  async getSelectedProjects(
+    userId: string,
+    projectIds: string[],
+  ): Promise<IProject[]> {
+    const projectDocs = await this.projects
+      .find({ _id: { $in: projectIds } })
+      .exec();
+    const projects = projectDocs.map((project) =>
+      this.projectDoctoIProject(project),
+    );
+    // only return projects that user is a member of
+    return projects.filter((project) =>
+      project.members.some((member) => member._id === userId),
+    );
+  }
 }
