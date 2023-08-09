@@ -8,16 +8,18 @@ import { Project, ProjectDocument } from './project.schema';
 import { Model, Types } from 'mongoose';
 import { CreateProjectDto, UpdateProjectDto } from './project.dto';
 import { OrgService } from 'src/org/org.service';
-import { UserService } from 'src/user/user.service';
 import { IProject } from './interface/project.interface';
 import { IProjectMember } from './interface/projectMember.interface';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ProjectCreatedEvent } from './event/projectCreated.event';
+import { ProjectDeletedEvent } from './event/projectDeleted.event';
 
 @Injectable()
 export class ProjectService {
   constructor(
     @InjectModel('Project') private readonly projects: Model<Project>,
     private readonly orgService: OrgService,
-    private readonly userService: UserService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   private projectDoctoIProject(projectDoc: ProjectDocument): IProject {
@@ -100,17 +102,27 @@ export class ProjectService {
       if (!member || member.role !== 'orgAdmin') {
         throw new NotFoundException('Organization not found.');
       }
-      const user = await this.userService.getUser(userId);
       const formattedProject = new this.projects({
         name: newProject.name,
-        creator: new Types.ObjectId(user._id),
-        members: [{ _id: user._id, role: 'projectAdmin' }],
+        creator: new Types.ObjectId(new Types.ObjectId(userId)),
+        members: [{ _id: new Types.ObjectId(userId), role: 'projectAdmin' }],
         org: new Types.ObjectId(org._id),
         createdAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
         updatedAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
       });
       const createdProject = await formattedProject.save();
-      return this.projectDoctoIProject(createdProject);
+      const project = this.projectDoctoIProject(createdProject);
+      this.eventEmitter.emit(
+        'project.created',
+        new ProjectCreatedEvent(
+          project._id,
+          project.name,
+          project.org,
+          project.createdAt,
+          userId,
+        ),
+      );
+      return project;
     } catch (error) {
       // todo: log error
       throw error;
@@ -152,8 +164,19 @@ export class ProjectService {
         });
       }
       if (canDelete) {
-        const project = await this.projects.findByIdAndDelete(projectId);
-        return this.projectDoctoIProject(project);
+        const projectDoc = await this.projects.findByIdAndDelete(projectId);
+        const project = this.projectDoctoIProject(projectDoc);
+        this.eventEmitter.emit(
+          'project.deleted',
+          new ProjectDeletedEvent(
+            project._id,
+            project.name,
+            project.org,
+            new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
+            userId,
+          ),
+        );
+        return project;
       } else {
         throw new UnauthorizedException();
       }

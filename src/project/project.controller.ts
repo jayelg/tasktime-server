@@ -10,25 +10,43 @@ import {
 } from '@nestjs/common';
 import { ProjectService } from './project.service';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { newProject } from './project.interface';
-import { OrgService } from 'src/org/org.service';
-import { UpdateProjectDto } from './project.dto';
-import { ItemService } from 'src/item/item.service';
-import { NewItemDto } from 'src/item/dto/newItem.dto';
+import { CreateProjectDto, UpdateProjectDto } from './project.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { IProject } from './interface/project.interface';
+import { SelectedProjectsDto } from './dto/selectedProjects.dto';
 
 @Controller('project')
 @ApiTags('project')
 export class ProjectController {
-  constructor(
-    private readonly projectService: ProjectService,
-    private readonly orgService: OrgService,
-    private readonly itemService: ItemService,
-  ) {}
+  constructor(private readonly projectService: ProjectService) {}
 
   @Get(':projectId')
   async getProject(@Req() req, @Param('projectId') projectId: string) {
     return await this.projectService.getProject(req.userId, projectId);
+  }
+
+  @Get(':projectId')
+  async getSelectedProjects(
+    @Req() req,
+    @Body('projectId') body: SelectedProjectsDto,
+  ): Promise<IProject[]> {
+    return await this.projectService.getSelectedProjects(
+      req.userId,
+      body.projectIds,
+    );
+  }
+
+  @Post()
+  async createProject(
+    @Req() req,
+    @Body() newProject: CreateProjectDto,
+  ): Promise<IProject> {
+    // todo implement authorization
+    return await this.projectService.createProject(
+      req.userId,
+      newProject.orgId,
+      newProject,
+    );
   }
 
   // no validated yet
@@ -47,23 +65,6 @@ export class ProjectController {
 
   @Delete(':projectId')
   async deleteProject(@Req() req, @Param('projectId') projectId: string) {
-    const project = await this.projectService.deleteProject(
-      req.userId,
-      projectId,
-    );
-    await this.orgService.removeProject(req.userId, project.org, projectId);
-  }
-
-  @Post(':projectId/newItem')
-  async newItem(
-    @Req() req,
-    @Param('projectId') projectId: string,
-    @Body() newItem: NewItemDto,
-  ) {
-    const project = await this.itemService.createItem(
-      req.userId,
-      projectId,
-      newItem,
-    );
+    await this.projectService.deleteProject(req.userId, projectId);
   }
 }
