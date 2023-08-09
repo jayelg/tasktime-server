@@ -2,16 +2,19 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Notification, NotificationDocument } from './notification.schema';
 import mongoose, { Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { User } from 'src/user/user.schema';
 import { CreateNotificationDto } from './dto/createNotification.dto';
 import { INotification } from './interface/notification.interface';
 import { IUser } from 'src/user/interface/user.interface';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { MemberInvitedEvent } from 'src/org/event/memberInvited.event';
+import { NotificationMemberInvitedEvent } from './event/notificationMemberInvited.event';
 
 @Injectable()
 export class NotificationService {
   constructor(
     @InjectModel('Notification')
     private readonly notifications: mongoose.Model<Notification>,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   notFoundError = 'Notification not found';
@@ -101,5 +104,27 @@ export class NotificationService {
     } catch (error) {
       throw new NotFoundException(this.notFoundError);
     }
+  }
+
+  @OnEvent('org.memberInvited', { async: true })
+  async orgInvite(payload: MemberInvitedEvent) {
+    const notificationTitle = `${
+      payload.invitedByName !== ''
+        ? `${payload.invitedByName} has invited you`
+        : `You have been invited`
+    } to join ${payload.orgName}`;
+    const newNotification: CreateNotificationDto = {
+      user: payload.invitedByUserId,
+      title: notificationTitle,
+      body: 'Click here to join',
+      button: 'Accept',
+      type: 'orgInvite',
+      reference: payload.invitedByUserId,
+    };
+    const notification = await this.createNotification(newNotification);
+    this.eventEmitter.emit(
+      'notification.memberInvited',
+      new NotificationMemberInvitedEvent(notification, payload.inviteeEmail),
+    );
   }
 }
