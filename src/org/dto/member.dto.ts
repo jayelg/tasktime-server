@@ -8,13 +8,14 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { IMember } from '../interface/member.interface';
+import { OrgMemberRole } from '../enum/orgMemberRole.enum';
 
 export class MemberDto implements IMember {
   @IsString()
   @IsNotEmpty()
   _id: string;
 
-  @IsIn(['orgViewer', 'orgUser', 'orgProjectManager', 'orgAdmin'])
+  @IsIn([...Object.values(OrgMemberRole)])
   role: string;
 
   @IsOptional()
