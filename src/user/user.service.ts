@@ -12,6 +12,8 @@ import { UserCreatedEvent } from './event/userCreated.event';
 import { UserInvitedToOrgEvent } from './event/userInvitedToOrg.event';
 import { InviteToOrgDto } from './dto/inviteToOrg.dto';
 import { NotificationMemberInvitedEvent } from 'src/notification/event/notificationMemberInvited.event';
+import { MagicLoginEvent } from 'src/auth/event/magicLogin.event';
+import { UserLoginEvent } from './event/userLogin.event';
 
 @Injectable()
 export class UserService {
@@ -154,5 +156,20 @@ export class UserService {
     await this.updateUser(payload.notification.user, {
       unreadNotifications: [payload.notification._id],
     });
+  }
+
+  @OnEvent('magicLogin.login', { async: true })
+  async getUserForMagicLogin(payload: MagicLoginEvent) {
+    // check if user exists etc.
+    let user = await this.getUserByEmail(payload.email);
+    let newUser = false;
+    if (!user) {
+      newUser = true;
+      user = await this.createUser(payload.email);
+    }
+    this.eventEmitter.emit(
+      'user.login',
+      new UserLoginEvent(user.firstName, user.email, payload.url, newUser),
+    );
   }
 }
