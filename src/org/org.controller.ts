@@ -20,7 +20,6 @@ import { IOrg } from './interface/org.interface';
 
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrgDto } from './dto/org.dto';
-import { NewMemberRequestDto } from './dto/newMemberRequest.dto';
 
 @Controller('org')
 @ApiTags('org')
