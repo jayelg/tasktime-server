@@ -7,13 +7,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { MagicLoginStrategy } from './magicLogin.strategy';
-import { MailModule } from 'src/mail/mail.module';
 
 @Module({
   imports: [
     UserModule,
     PassportModule,
-    MailModule,
     ConfigModule.forRoot(),
     JwtModule.registerAsync({
       imports: [ConfigModule],
