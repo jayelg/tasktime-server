@@ -24,6 +24,10 @@ export class CreateProjectDto {
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  orgId: string;
 }
 
 export class UpdateProjectDto {
