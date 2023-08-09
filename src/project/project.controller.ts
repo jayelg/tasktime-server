@@ -11,7 +11,7 @@ import {
 import { ProjectService } from './project.service';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CreateProjectDto, UpdateProjectDto } from './project.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { IProject } from './interface/project.interface';
 import { SelectedProjectsDto } from './dto/selectedProjects.dto';
 
