@@ -81,7 +81,7 @@ export class ItemController {
     const optionalProps = ['parentItemId', 'predecessorItemId'];
     this.checkRequest(requiredProps, newItem, optionalProps);
     const createdItem = await this.itemService.createItem(
-      req.userId,
+      req.user._id,
       projectId,
       newItem,
     );

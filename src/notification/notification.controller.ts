@@ -13,7 +13,7 @@ export class NotificationController {
     @Param('notificationId') notificationId: string,
   ) {
     const note = await this.notificationService.getNotification(
-      req.userId,
+      req.user._id,
       notificationId,
     );
     return note;
@@ -25,7 +25,7 @@ export class NotificationController {
     @Param('notificationId') notificationId: string,
   ) {
     await this.notificationService.deleteNotification(
-      req.userId,
+      req.user._id,
       notificationId,
     );
   }

@@ -28,15 +28,14 @@ export class OrgController {
 
   @Post()
   async createOrg(@Req() req, @Body() newOrg: CreateOrgDto): Promise<IOrg> {
-    const org = await this.orgService.createOrg(req.userId, newOrg);
-    return org;
+    return await this.orgService.createOrg(req.user._id, newOrg);
   }
 
   @Get(':orgId')
   @ApiOperation({ summary: 'Get an organization by ID' })
   @ApiResponse({ status: 200, description: 'The organization', type: OrgDto })
   async getOrg(@Req() req, @Param('orgId') orgId: string): Promise<OrgDto> {
-    return await this.orgService.getOrg(req.userId, orgId);
+    return await this.orgService.getOrg(req.user._id, orgId);
   }
 
   // todo:
@@ -47,25 +46,11 @@ export class OrgController {
     @Param('orgId') orgId: string,
     @Body() orgUpdates: UpdateOrgDto,
   ): Promise<IOrg> {
-    const internalOrgUpdates: UpdateOrgDto = orgUpdates;
-    return await this.orgService.updateOrg(
-      req.userId,
-      orgId,
-      internalOrgUpdates,
-    );
+    return await this.orgService.updateOrg(req.user._id, orgId, orgUpdates);
   }
 
   @Delete(':orgId')
   async deleteOrg(@Req() req, @Param('orgId') orgId: string) {
-    return await this.orgService.deleteOrg(req.userId, orgId);
-  }
-
-  @Get(':orgId/projects')
-  async getAllProjects(
-    @Req() req,
-    @Param('orgId') orgId: string,
-  ): Promise<string[]> {
-    const { projects } = await this.orgService.getOrg(req.userId, orgId);
-    return projects;
+    return await this.orgService.deleteOrg(req.user._id, orgId);
   }
 }

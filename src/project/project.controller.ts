@@ -65,6 +65,6 @@ export class ProjectController {
 
   @Delete(':projectId')
   async deleteProject(@Req() req, @Param('projectId') projectId: string) {
-    await this.projectService.deleteProject(req.userId, projectId);
+    await this.projectService.deleteProject(req.user._id, projectId);
   }
 }

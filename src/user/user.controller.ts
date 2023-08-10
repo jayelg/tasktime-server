@@ -14,25 +14,25 @@ export class UserController {
 
   @Get()
   async getProfile(@Req() req) {
-    return await this.userService.getUser(req.userId);
+    return await this.userService.getUser(req.user._id);
   }
 
   // add DTO for acceptable updates
   @Patch()
   async updateUser(@Req() req, @Body() updates: UpdateUserRequestDto) {
-    return await this.userService.updateUser(req.userId, updates);
+    return await this.userService.updateUser(req.user._id, updates);
   }
 
   @Patch('disable')
   async disableUser(@Req() req) {
     // send confirmation email
-    await this.userService.updateUser(req.userId, { disabled: true });
+    await this.userService.updateUser(req.user._id, { disabled: true });
   }
 
   @Patch('enable')
   async enableUser(@Req() req) {
     // send confirmation email
-    await this.userService.updateUser(req.userId, { disabled: false });
+    await this.userService.updateUser(req.user._id, { disabled: false });
   }
 
   @Get('allorgs')
@@ -43,7 +43,7 @@ export class UserController {
     type: [OrgDto],
   })
   async getAllOrgs(@Req() req): Promise<string[]> {
-    const { orgs } = await this.userService.getUser(req.userId);
+    const { orgs } = await this.userService.getUser(req.user._id);
     if (!orgs) {
       return [];
     }
@@ -55,7 +55,10 @@ export class UserController {
     @Req() req,
     @Param('notificationId') notificationId: string,
   ) {
-    await this.userService.removeUnreadNotification(req.userId, notificationId);
+    await this.userService.removeUnreadNotification(
+      req.user._id,
+      notificationId,
+    );
   }
 
   @Post('inviteTo/:orgId')
@@ -65,7 +68,7 @@ export class UserController {
     @Body() inviteData: InviteToOrgDto,
   ) {
     await this.userService.handleInvitedOrgMember(
-      req.userId,
+      req.user._id,
       orgId,
       inviteData,
     );
