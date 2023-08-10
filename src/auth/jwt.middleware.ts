@@ -2,9 +2,8 @@ import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '@nestjs/jwt';
 
-interface CustomRequest extends Request {
-  userId?: string;
-  email?: string;
+export interface CustomRequest extends Request {
+  user?: Express.User & { _id: string; email: string };
 }
 
 @Injectable()
@@ -19,8 +18,10 @@ export class JwtMiddleware implements NestMiddleware {
           _id: string;
           email: string;
         };
-        req.userId = _id;
-        req.email = email;
+        req.user = {
+          _id: _id,
+          email: email,
+        };
       } catch (err) {
         // Handle JWT verification error
       }
