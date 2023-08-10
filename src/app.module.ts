@@ -19,6 +19,8 @@ import { MessageModule } from './message/message.module';
 import { ItemModule } from './item/item.module';
 import { DevtoolsModule } from '@nestjs/devtools-integration';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { AbilityModule } from './ability/ability.module';
+import { AbilitiesGuard } from './ability/abilities.guard';
 
 @Module({
   imports: [
@@ -49,12 +51,17 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     MailModule,
     NotificationModule,
     MessageModule,
+    AbilityModule,
   ],
   providers: [
     JwtService,
     {
       provide: APP_GUARD,
-      useClass: JwtAuthGuard, // default all endpoints required JWT
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: AbilitiesGuard,
     },
   ],
 })
