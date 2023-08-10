@@ -41,8 +41,8 @@ export class MemberController {
     // check if user already has org
     // update user with org
     try {
-      if (await this.orgService.getOrg(req.userId, orgId)) {
-        await this.userService.updateUser(req.userId, { orgs: [orgId] });
+      if (await this.orgService.getOrg(req.user._id, orgId)) {
+        await this.userService.updateUser(req.user._id, { orgs: [orgId] });
       }
     } catch (error) {
       throw error;
@@ -55,7 +55,7 @@ export class MemberController {
     @Param('orgId') orgId: string,
     @Body() body,
   ) {
-    const org = await this.orgService.getOrg(req.userId, orgId);
+    const org = await this.orgService.getOrg(req.user._id, orgId);
     if (org) {
       const fullUser = await this.userService.getUserByEmail(body.email);
       const member = org.members.find((member) => member._id === fullUser._id);
@@ -72,7 +72,7 @@ export class MemberController {
     @Param('orgId') orgId: string,
     @Param('memberId') memberId: string,
   ) {
-    const org = await this.orgService.getOrg(req.userId, orgId);
+    const org = await this.orgService.getOrg(req.user._id, orgId);
     const member = org.members.find((member) => member._id === memberId);
     if (!member) {
       throw new NotFoundException('Member not found in organization.');
@@ -88,9 +88,13 @@ export class MemberController {
     @Param('memberId') memberId: string,
   ) {
     try {
-      await this.orgService.authorizeUserForOrg(req.userId, orgId, 'orgAdmin');
+      await this.orgService.authorizeUserForOrg(
+        req.user._id,
+        orgId,
+        'orgAdmin',
+      );
       const org = await this.orgService.removeMember(
-        req.userId,
+        req.user._id,
         orgId,
         memberId,
       );
@@ -101,7 +105,7 @@ export class MemberController {
           org.name,
           memberId,
           new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-          req.userId,
+          req.user._id,
         ),
       );
     } catch (error) {
