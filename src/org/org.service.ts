@@ -93,26 +93,10 @@ export class OrgService {
     return orgs;
   }
 
-  async getOrg(userId: string, orgId: string): Promise<IOrg> {
+  async getOrg(orgId: string): Promise<IOrg> {
     try {
-      const { orgDoc } = await this.getOrgAndAuthorizeUser(
-        userId,
-        orgId,
-        'orgViewer',
-      );
-      return this.orgDoctoIOrg(orgDoc);
+      return this.orgDoctoIOrg(await this.orgs.findById(orgId));
     } catch (error) {
-      if (error instanceof MongooseError) {
-        throw new ServiceUnavailableException('Database error occurred.');
-      }
-      if (
-        (error as Error).message.includes(
-          // hacky approach to identify invaid orgId error for now.
-          'Argument passed in must be a string of 12 bytes or a string of 24 hex characters or an integer',
-        )
-      ) {
-        throw new NotAcceptableException('Invalid organization ID.');
-      }
       throw error;
     }
   }
@@ -139,16 +123,11 @@ export class OrgService {
   }
 
   async updateOrg(
-    userId: string,
     orgId: string,
     orgUpdates: IOrgServiceUpdates,
   ): Promise<IOrg> {
     try {
-      const { orgDoc } = await this.getOrgAndAuthorizeUser(
-        userId,
-        orgId,
-        'orgAdmin',
-      );
+      const orgDoc = await this.orgs.findById(orgId);
       Object.assign(orgDoc, orgUpdates);
       const updatedOrg = await orgDoc.save();
       return this.orgDoctoIOrg(updatedOrg);
@@ -158,22 +137,17 @@ export class OrgService {
     }
   }
 
-  async deleteOrg(userId: string, orgId: string) {
+  async deleteOrg(orgId: string) {
     try {
-      await this.getOrgAndAuthorizeUser(userId, orgId, 'orgAdmin');
       await this.orgs.findByIdAndDelete(orgId);
     } catch (error) {
       throw error;
     }
   }
 
-  async removeMember(userId: string, orgId: string, memberId: string) {
+  async removeMember(orgId: string, memberId: string) {
     try {
-      const { orgDoc } = await this.getOrgAndAuthorizeUser(
-        userId,
-        orgId,
-        'orgAdmin',
-      );
+      const orgDoc = await this.orgs.findById(orgId);
       if (!orgDoc) {
         throw new NotFoundException('org not found');
       }
@@ -192,7 +166,7 @@ export class OrgService {
   }
 
   // auth either orgAdmin or projectAdmin
-  async removeProject(userId: string, orgId: string, projectId: string) {
+  async removeProject(orgId: string, projectId: string) {
     try {
       await this.orgs
         .findByIdAndUpdate(
