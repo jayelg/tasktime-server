@@ -8,7 +8,8 @@ import {
 import { Reflector } from '@nestjs/core';
 import { RequiredRule, CHECK_ABILITY } from './abilities.decorator';
 import { AbilityFactory } from './ability.factory';
-import { CustomRequest } from 'src/auth/jwt.middleware';
+import { IS_PUBLIC_KEY } from 'src/auth/SkipAuth.decorator';
+import { Request } from 'express';
 
 @Injectable()
 export class AbilitiesGuard implements CanActivate {
@@ -18,14 +19,23 @@ export class AbilitiesGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    // aknowledge SkipAuth decorator
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) {
+      return true;
+    }
+
     const rules =
       this.reflector.get<RequiredRule[]>(CHECK_ABILITY, context.getHandler()) ||
       [];
 
-    const request: CustomRequest = context.switchToHttp().getRequest();
+    const request: Request = context.switchToHttp().getRequest();
 
     const ability = await this.caslAbilityFactory.defineAbility(
-      request.user._id,
+      request.user.id,
       request.params.orgId,
       request.params.projectId,
     );
