@@ -5,7 +5,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { EventModule } from './event/event.module';
-import { JwtMiddleware } from './auth/jwt.middleware';
 import { JwtService } from '@nestjs/jwt';
 import { accessibleRecordsPlugin } from '@casl/mongoose';
 // Modules
@@ -67,6 +66,6 @@ import { AbilitiesGuard } from './ability/abilities.guard';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(JwtMiddleware).forRoutes('*'); // Apply the jwt decrypting middleware to all routes
+    // consumer.apply(JwtMiddleware).forRoutes('*'); // Apply the jwt decrypting middleware to all routes
   }
 }
