@@ -20,6 +20,13 @@ import { IOrg } from './interface/org.interface';
 
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrgDto } from './dto/org.dto';
+import {
+  CheckAbilities,
+  CreateOrgAbility,
+  DeleteOrgAbility,
+  UpdateOrgAbility,
+  ViewOrgAbility,
+} from 'src/ability/abilities.decorator';
 
 @Controller('org')
 @ApiTags('org')
@@ -27,6 +34,7 @@ export class OrgController {
   constructor(private readonly orgService: OrgService) {}
 
   @Post()
+  @CheckAbilities(new CreateOrgAbility())
   async createOrg(@Req() req, @Body() newOrg: CreateOrgDto): Promise<IOrg> {
     return await this.orgService.createOrg(req.user._id, newOrg);
   }
@@ -34,6 +42,7 @@ export class OrgController {
   @Get(':orgId')
   @ApiOperation({ summary: 'Get an organization by ID' })
   @ApiResponse({ status: 200, description: 'The organization', type: OrgDto })
+  @CheckAbilities(new ViewOrgAbility())
   async getOrg(@Req() req, @Param('orgId') orgId: string): Promise<OrgDto> {
     return await this.orgService.getOrg(req.user._id, orgId);
   }
@@ -41,6 +50,7 @@ export class OrgController {
   // todo:
   // still no error when property is not in schema, just returns without changes.
   @Patch(':orgId')
+  @CheckAbilities(new UpdateOrgAbility())
   async updateOrg(
     @Req() req,
     @Param('orgId') orgId: string,
@@ -49,6 +59,7 @@ export class OrgController {
     return await this.orgService.updateOrg(req.user._id, orgId, orgUpdates);
   }
 
+  @CheckAbilities(new DeleteOrgAbility())
   @Delete(':orgId')
   async deleteOrg(@Req() req, @Param('orgId') orgId: string) {
     return await this.orgService.deleteOrg(req.user._id, orgId);
