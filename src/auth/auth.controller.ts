@@ -28,8 +28,6 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Redirect URL for magic link' })
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async login(@Req() req, @Res() res, @Body() body: PasswordlessLoginDto) {
-    // no need to validate as user is either validated or created after magic link suceeds.
-    // this.authService.validateUser(body.destination);
     return this.magicLoginstrategy.send(req, res);
   }
 
