@@ -9,7 +9,6 @@ import { Model, Types } from 'mongoose';
 import { CreateProjectDto, UpdateProjectDto } from './project.dto';
 import { OrgService } from 'src/org/org.service';
 import { IProject } from './interface/project.interface';
-import { IProjectMember } from './interface/projectMember.interface';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ProjectCreatedEvent } from './event/projectCreated.event';
 import { ProjectDeletedEvent } from './event/projectDeleted.event';
@@ -38,45 +37,9 @@ export class ProjectService {
     return org;
   }
 
-  async authorizeUserAccessToProject(
-    userId: string,
-    projectId: string,
-    requiredLevel: string,
-  ) {
-    const projectDoc = await this.projects.findById(projectId);
-    if (!projectDoc) {
-      throw new NotFoundException('Project not found.');
-    }
-    const project = this.projectDoctoIProject(projectDoc);
-    const member = await this.getProjectMember(userId, project);
-    // the order defines the heirachy eg. admin has all user privilages
-    const permissionLevels = ['projectViewer', 'projectUser', 'projectAdmin'];
-    const requiredIndex = permissionLevels.indexOf(requiredLevel);
-    const userIndex = permissionLevels.indexOf(member.role);
-    if (!member || userIndex === -1 || userIndex < requiredIndex) {
-      throw new NotFoundException(`You don't have permission.`);
-    } else {
-      return { projectDoc: projectDoc, member: member };
-    }
-  }
-
-  private getProjectMember(userId: string, project: IProject): IProjectMember {
-    const member = project.members.find(
-      (member) => member._id.toString() === userId,
-    );
-    if (!member) {
-      throw new NotFoundException('Member not found');
-    }
-    return member;
-  }
-
-  async getProject(userId: string, projectId: string): Promise<IProject> {
+  async getProject(projectId: string): Promise<IProject> {
     try {
-      const { projectDoc } = await this.authorizeUserAccessToProject(
-        userId,
-        projectId,
-        'projectViewer',
-      );
+      const projectDoc = await this.projects.findById(projectId);
       if (!projectDoc) {
         throw new NotFoundException('Project not found.');
       }
@@ -94,14 +57,7 @@ export class ProjectService {
     newProject: CreateProjectDto,
   ): Promise<IProject> {
     try {
-      // org should already be authorized?
-      const org = await this.orgService.getOrg(userId, orgId);
-      const member = org.members.find(
-        (member) => member._id.toString() === userId,
-      );
-      if (!member || member.role !== 'orgAdmin') {
-        throw new NotFoundException('Organization not found.');
-      }
+      const org = await this.orgService.getOrg(orgId);
       const formattedProject = new this.projects({
         name: newProject.name,
         creator: new Types.ObjectId(new Types.ObjectId(userId)),
@@ -130,16 +86,11 @@ export class ProjectService {
   }
 
   async updateProject(
-    userId: string,
     projectId: string,
     changes: UpdateProjectDto,
   ): Promise<IProject> {
     try {
-      const { projectDoc } = await this.authorizeUserAccessToProject(
-        userId,
-        projectId,
-        'projectAdmin',
-      );
+      const projectDoc = await this.projects.findById(projectId);
       Object.assign(projectDoc, changes);
       const updatedProject = await projectDoc.save();
       return this.projectDoctoIProject(updatedProject);
@@ -152,34 +103,19 @@ export class ProjectService {
   // either a orgAdmin or a projectAdmin can delete a project
   async deleteProject(userId: string, projectId: string) {
     try {
-      const project = await this.getProject(userId, projectId);
-      const org = await this.orgService.getOrg(userId, project.org);
-      let canDelete = false;
-      canDelete = org.members.some((member) => {
-        return member._id === userId && member.role === 'orgAdmin';
-      });
-      if (!canDelete) {
-        canDelete = project.members.some((member) => {
-          return member._id === userId && member.role === 'projectAdmin';
-        });
-      }
-      if (canDelete) {
-        const projectDoc = await this.projects.findByIdAndDelete(projectId);
-        const project = this.projectDoctoIProject(projectDoc);
-        this.eventEmitter.emit(
-          'project.deleted',
-          new ProjectDeletedEvent(
-            project._id,
-            project.name,
-            project.org,
-            new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-            userId,
-          ),
-        );
-        return project;
-      } else {
-        throw new UnauthorizedException();
-      }
+      const projectDoc = await this.projects.findByIdAndDelete(projectId);
+      const project = this.projectDoctoIProject(projectDoc);
+      this.eventEmitter.emit(
+        'project.deleted',
+        new ProjectDeletedEvent(
+          project._id,
+          project.name,
+          project.org,
+          new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
+          userId,
+        ),
+      );
+      return project;
     } catch (error) {
       throw error;
     }
