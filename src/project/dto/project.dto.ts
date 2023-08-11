@@ -48,6 +48,10 @@ export class ProjectDto implements IProject {
   @IsNotEmpty()
   isComplete: boolean;
 
+  @IsBoolean()
+  @IsNotEmpty()
+  isHidden: boolean;
+
   @IsArray()
   events: string[];
 

@@ -52,6 +52,12 @@ export class Project {
   })
   isComplete: boolean;
 
+  @Prop({
+    required: true,
+    default: false,
+  })
+  isHidden: boolean;
+
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }] })
   events: mongoose.Types.ObjectId[];
 
