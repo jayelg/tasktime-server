@@ -31,7 +31,7 @@ export class ProjectController {
   @Get(':projectId')
   @CheckAbilities(new ViewProjectAbility())
   async getProject(@Req() req, @Param('projectId') projectId: string) {
-    return await this.projectService.getProject(req.user.id, projectId);
+    return await this.projectService.getProject(projectId);
   }
 
   // Todo: CheckAbilities on multiple Projects?
@@ -70,11 +70,7 @@ export class ProjectController {
     @Param('projectId') projectId: string,
     @Body() changes: UpdateProjectDto,
   ) {
-    return await this.projectService.updateProject(
-      req.user.id,
-      projectId,
-      changes,
-    );
+    return await this.projectService.updateProject(projectId, changes);
   }
   @CheckAbilities(new DeleteProjectAbility())
   @Delete(':projectId')
