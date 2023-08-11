@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Item } from './item.schema';
+import { Item, ItemDocument } from './item.schema';
 import { Project } from '../project/project.schema';
 import mongoose, { Model, Types } from 'mongoose';
 import { NewItemDto } from './dto/newItem.dto';
+import { IItem } from './interface/item.interface';
 
 @Injectable()
 export class ItemService {
@@ -11,6 +12,27 @@ export class ItemService {
     @InjectModel('Item') private readonly items: Model<Item>,
     @InjectModel('Project') private readonly projects: Model<Project>,
   ) {}
+
+  private itemDocToIitem(itemDoc: ItemDocument): IItem {
+    const item: IItem = {
+      ...itemDoc.toJSON(),
+      // convert all objectId types to strings
+      _id: itemDoc._id.toString(),
+      project: itemDoc.project.toString(),
+      allocatedTo: itemDoc.allocatedTo.map((user) => user.toString()),
+      reviewers: itemDoc.reviewers.map((reviewer) => reviewer.toString()),
+      nestedItemIds: itemDoc.nestedItemIds.map((nestedItemId) =>
+        nestedItemId.toString(),
+      ),
+      parentItemId: itemDoc.parentItemId.toString(),
+      predecessorItemId: itemDoc.parentItemId.toString(),
+      successorItemId: itemDoc.parentItemId.toString(),
+      itemObjects: itemDoc.itemObjects.map((itemObject) =>
+        itemObject.toString(),
+      ),
+    };
+    return item;
+  }
 
   async getAllItems(projectId: string) {
     const populatedProject = await this.projects
@@ -25,14 +47,8 @@ export class ItemService {
   }
 
   // todo add check user and role authorization
-  async getItem(projectId: string, itemId: string) {
-    const item = await this.items.findById(itemId);
-    if (!item) {
-      throw new NotFoundException(
-        `Get Item Service: Item ${itemId} not found in project ${projectId}`,
-      );
-    }
-    return item;
+  async getItem(itemId: string): Promise<IItem> {
+    return this.itemDocToIitem(await this.items.findById(itemId));
   }
 
   async createItem(userId: string, projectId: string, newItem: NewItemDto) {
