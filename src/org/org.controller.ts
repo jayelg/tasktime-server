@@ -44,7 +44,7 @@ export class OrgController {
   @ApiResponse({ status: 200, description: 'The organization', type: OrgDto })
   @CheckAbilities(new ViewOrgAbility())
   async getOrg(@Req() req, @Param('orgId') orgId: string): Promise<OrgDto> {
-    return await this.orgService.getOrg(req.user.id, orgId);
+    return await this.orgService.getOrg(orgId);
   }
 
   // todo:
@@ -56,12 +56,12 @@ export class OrgController {
     @Param('orgId') orgId: string,
     @Body() orgUpdates: UpdateOrgDto,
   ): Promise<IOrg> {
-    return await this.orgService.updateOrg(req.user.id, orgId, orgUpdates);
+    return await this.orgService.updateOrg(orgId, orgUpdates);
   }
 
   @CheckAbilities(new DeleteOrgAbility())
   @Delete(':orgId')
   async deleteOrg(@Req() req, @Param('orgId') orgId: string) {
-    return await this.orgService.deleteOrg(req.user.id, orgId);
+    return await this.orgService.deleteOrg(orgId);
   }
 }
