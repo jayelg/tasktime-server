@@ -2,6 +2,7 @@ import { SetMetadata } from '@nestjs/common';
 import { Action, Subjects } from './ability.factory';
 import { Org } from 'src/org/org.schema';
 import { Project } from 'src/project/project.schema';
+import { Item } from 'src/item/item.schema';
 
 export interface RequiredRule {
   action: Action;
@@ -65,4 +66,20 @@ export class UpdateProjectAbility implements RequiredRule {
 export class DeleteProjectAbility implements RequiredRule {
   action = Action.Delete;
   subject = Project;
+}
+
+//Item
+export class CreateItemAbility implements RequiredRule {
+  action = Action.Create;
+  subject = Item;
+}
+
+export class UpdateItemAbility implements RequiredRule {
+  action = Action.Update;
+  subject = Item;
+}
+
+export class DeleteItemAbility implements RequiredRule {
+  action = Action.Delete;
+  subject = Item;
 }

@@ -13,6 +13,7 @@ import { ProjectService } from 'src/project/project.service';
 import { Project } from 'src/project/project.schema';
 import { Org } from 'src/org/org.schema';
 import { Item } from 'src/item/item.schema';
+import { ItemService } from 'src/item/item.service';
 
 export enum Action {
   Manage = 'manage',
@@ -33,16 +34,22 @@ export class AbilityFactory {
   constructor(
     private readonly orgService: OrgService,
     private readonly projectService: ProjectService,
+    private readonly itemService: ItemService,
   ) {}
 
-  async defineAbility(userId?: string, orgId?: string, projectId?: string) {
+  async defineAbility(
+    userId?: string,
+    orgId?: string,
+    projectId?: string,
+    itemId?: string,
+  ) {
     const { can, build } = new AbilityBuilder<AppAbility>(createMongoAbility);
 
     can(Action.Create, Org);
     // get roles from org and project
     if (orgId) {
       try {
-        const org = await this.orgService.getOrg(userId, orgId);
+        const org = await this.orgService.getOrg(orgId);
         const orgMember = org.members.find((member) => member._id === userId);
         if (orgMember.role === OrgMemberRole.Admin) {
           can(Action.Read, Project); // can see all project including hidden
@@ -64,12 +71,13 @@ export class AbilityFactory {
 
     if (projectId) {
       try {
-        const project = await this.projectService.getProject(userId, projectId);
+        const project = await this.projectService.getProject(projectId);
         const projectMember = project.members.find(
           (member) => member._id === userId,
         );
         if (projectMember.role === ProjectMemberRole.Admin) {
           can(Action.Manage, Project);
+          can(Action.Manage, Item);
         } else if (
           projectMember.role === ProjectMemberRole.Member ||
           projectMember.role === ProjectMemberRole.Admin
@@ -79,6 +87,17 @@ export class AbilityFactory {
           can(Action.Read, Project);
         }
       } catch (error) {}
+    }
+
+    if (itemId) {
+      try {
+        const item = await this.itemService.getItem(itemId);
+        const itemAllocatedTo = item.allocatedTo.find(
+          (user) => user === userId,
+        );
+      } catch (error) {
+        throw error;
+      }
     }
 
     return build({
