@@ -27,6 +27,7 @@ import {
   UpdateOrgAbility,
   ViewOrgAbility,
 } from 'src/ability/abilities.decorator';
+import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
 
 @Controller('org')
 @ApiTags('org')
@@ -43,7 +44,10 @@ export class OrgController {
   @ApiOperation({ summary: 'Get an organization by ID' })
   @ApiResponse({ status: 200, description: 'The organization', type: OrgDto })
   @CheckAbilities(new ViewOrgAbility())
-  async getOrg(@Req() req, @Param('orgId') orgId: string): Promise<OrgDto> {
+  async getOrg(
+    @Req() req: UserRequestDto,
+    @Param('orgId') orgId: string,
+  ): Promise<OrgDto> {
     return await this.orgService.getOrg(orgId);
   }
 
@@ -52,7 +56,7 @@ export class OrgController {
   @Patch(':orgId')
   @CheckAbilities(new UpdateOrgAbility())
   async updateOrg(
-    @Req() req,
+    @Req() req: UserRequestDto,
     @Param('orgId') orgId: string,
     @Body() orgUpdates: UpdateOrgDto,
   ): Promise<IOrg> {
@@ -61,7 +65,7 @@ export class OrgController {
 
   @CheckAbilities(new DeleteOrgAbility())
   @Delete(':orgId')
-  async deleteOrg(@Req() req, @Param('orgId') orgId: string) {
+  async deleteOrg(@Req() req: UserRequestDto, @Param('orgId') orgId: string) {
     return await this.orgService.deleteOrg(orgId);
   }
 }

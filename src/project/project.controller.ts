@@ -22,6 +22,7 @@ import {
   UpdateProjectAbility,
   ViewProjectAbility,
 } from 'src/ability/abilities.decorator';
+import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
 
 @Controller('org/:orgId/project')
 @ApiTags('project')
@@ -39,7 +40,7 @@ export class ProjectController {
   @Get()
   @CheckAbilities(new ManageOrgAbility())
   async getSelectedProjects(
-    @Req() req,
+    @Req() req: UserRequestDto,
     @Body('projectId') body: SelectedProjectsDto,
   ): Promise<IProject[]> {
     return await this.projectService.getSelectedProjects(
@@ -51,7 +52,7 @@ export class ProjectController {
   @Post()
   @CheckAbilities(new CreateProjectAbility())
   async createProject(
-    @Req() req,
+    @Req() req: UserRequestDto,
     @Body() newProject: CreateProjectDto,
   ): Promise<IProject> {
     // todo implement authorization
@@ -66,7 +67,7 @@ export class ProjectController {
   @Patch(':projectId')
   @CheckAbilities(new UpdateProjectAbility())
   async updateProject(
-    @Req() req,
+    @Req() req: UserRequestDto,
     @Param('projectId') projectId: string,
     @Body() changes: UpdateProjectDto,
   ) {
@@ -74,7 +75,10 @@ export class ProjectController {
   }
   @CheckAbilities(new DeleteProjectAbility())
   @Delete(':projectId')
-  async deleteProject(@Req() req, @Param('projectId') projectId: string) {
+  async deleteProject(
+    @Req() req: UserRequestDto,
+    @Param('projectId') projectId: string,
+  ) {
     await this.projectService.deleteProject(req.user.id, projectId);
   }
 }
