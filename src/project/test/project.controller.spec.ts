@@ -1,20 +1,26 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotificationController } from './notification.controller';
-import { NotificationService } from './notification.service';
+import { ProjectController } from '../project.controller';
+import { ProjectService } from '../project.service';
 import { getModelToken } from '@nestjs/mongoose';
+import { OrgService } from 'src/org/org.service';
 import { UserService } from 'src/user/user.service';
 
-describe('NotificationController', () => {
-  let controller: NotificationController;
+describe('ProjectController', () => {
+  let controller: ProjectController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [NotificationController],
+      controllers: [ProjectController],
       providers: [
-        NotificationService,
+        ProjectService,
+        OrgService,
         UserService,
         {
-          provide: getModelToken('Notification'),
+          provide: getModelToken('Project'),
+          useValue: {},
+        },
+        {
+          provide: getModelToken('Org'),
           useValue: {},
         },
         {
@@ -24,7 +30,7 @@ describe('NotificationController', () => {
       ],
     }).compile();
 
-    controller = module.get<NotificationController>(NotificationController);
+    controller = module.get<ProjectController>(ProjectController);
   });
 
   it('should be defined', () => {

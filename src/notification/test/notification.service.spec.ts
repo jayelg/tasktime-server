@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotificationService } from './notification.service';
+import { NotificationService } from '../notification.service';
 import { getModelToken } from '@nestjs/mongoose';
 
 describe('NotificationService', () => {

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OrgService } from './org.service';
-import { CreateOrgDto } from './dto/org.dto';
+import { OrgService } from '../org.service';
+import { CreateOrgDto } from '../dto/org.dto';
 import mongoose from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
 

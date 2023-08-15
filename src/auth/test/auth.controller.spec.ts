@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { AuthController } from '../auth.controller';
+import { AuthService } from '../auth.service';
 import { UserService } from 'src/user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { getModelToken } from '@nestjs/mongoose';
-import { MagicLoginStrategy } from './magicLogin.strategy';
+import { MagicLoginStrategy } from '../magicLogin.strategy';
 import { ConfigService } from '@nestjs/config';
 import { MailService } from 'src/mail/mail.service';
 

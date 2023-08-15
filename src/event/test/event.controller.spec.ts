@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { EventController } from './event.controller';
+import { EventController } from '../event.controller';
 import { ProjectModule } from 'src/project/project.module';
 
 describe('EventController', () => {

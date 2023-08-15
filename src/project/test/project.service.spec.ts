@@ -1,16 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ProjectController } from './project.controller';
-import { ProjectService } from './project.service';
+import { ProjectService } from '../project.service';
 import { getModelToken } from '@nestjs/mongoose';
 import { OrgService } from 'src/org/org.service';
 import { UserService } from 'src/user/user.service';
 
-describe('ProjectController', () => {
-  let controller: ProjectController;
+describe('ProjectService', () => {
+  let service: ProjectService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [ProjectController],
       providers: [
         ProjectService,
         OrgService,
@@ -30,10 +28,10 @@ describe('ProjectController', () => {
       ],
     }).compile();
 
-    controller = module.get<ProjectController>(ProjectController);
+    service = module.get<ProjectService>(ProjectService);
   });
 
   it('should be defined', () => {
-    expect(controller).toBeDefined();
+    expect(service).toBeDefined();
   });
 });

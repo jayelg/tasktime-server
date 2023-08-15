@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OrgController } from './org.controller';
+import { OrgController } from '../org.controller';
 import { UserModule } from 'src/user/user.module';
 
 describe('OrgController', () => {
