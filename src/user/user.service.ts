@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { User, UserDocument } from './user.schema';
+import { User } from './user.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { IUser } from './interface/user.interface';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { OrgCreatedEvent } from 'src/org/event/orgCreated.event';
@@ -14,6 +13,7 @@ import { InviteToOrgDto } from './dto/inviteToOrg.dto';
 import { NotificationMemberInvitedEvent } from 'src/notification/event/notificationMemberInvited.event';
 import { MagicLoginEvent } from 'src/auth/event/magicLogin.event';
 import { UserLoginEvent } from './event/userLogin.event';
+import { UserDto } from './dto/user.dto';
 
 @Injectable()
 export class UserService {
@@ -23,45 +23,22 @@ export class UserService {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  private userDocToIUser(userDoc: UserDocument): IUser {
-    const user: IUser = {
-      ...userDoc.toJSON(),
-      // convert all objectId types to strings
-      _id: userDoc._id.toString(),
-      orgs: userDoc.orgs.map((org) => org._id.toString()),
-      personalProjects: userDoc.personalProjects.map((project) =>
-        project._id.toString(),
-      ),
-      unreadNotifications: userDoc.unreadNotifications.map((note) =>
-        note._id.toString(),
-      ),
-      unreadMessages: userDoc.unreadMessages.map((message) =>
-        message._id.toString(),
-      ),
-    };
-
-    return user;
+  async getUser(userId: string): Promise<UserDto> {
+    return new UserDto(await this.users.findById(userId));
   }
 
   // used to lookup user during authentication
-  async getUserByEmail(email: string): Promise<IUser> {
-    const userDoc = await this.users.findOne({ email: email });
-    return this.userDocToIUser(userDoc);
+  async getUserByEmail(email: string): Promise<UserDto> {
+    return new UserDto(await this.users.findOne({ email: email }));
   }
 
-  async getUser(userId: string): Promise<IUser> {
-    const userDoc = await this.users.findById(userId);
-    return this.userDocToIUser(userDoc);
-  }
-
-  async createUser(email: string): Promise<IUser> {
+  async createUser(email: string): Promise<UserDto> {
     const formattedUser = new this.users({
       email: email,
       createdAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
     });
     try {
-      const userDoc = await formattedUser.save();
-      const user = this.userDocToIUser(userDoc);
+      const user = new UserDto(await formattedUser.save());
       this.eventEmitter.emit(
         'user.created',
         new UserCreatedEvent(user._id, user.email, user.createdAt),
@@ -73,20 +50,22 @@ export class UserService {
     }
   }
 
-  async updateUser(userId: string, updates: UpdateUserDto): Promise<IUser> {
-    const userDoc = await this.users
-      .findByIdAndUpdate(userId, updates, { new: true })
-      .exec();
-    return this.userDocToIUser(userDoc);
+  async updateUser(userId: string, updates: UpdateUserDto): Promise<UserDto> {
+    return new UserDto(
+      await this.users.findByIdAndUpdate(userId, updates, { new: true }).exec(),
+    );
   }
 
-  async removeUnreadNotification(userId: string, notificationId: string) {
+  async removeUnreadNotification(
+    userId: string,
+    notificationId: string,
+  ): Promise<UserDto> {
     const userDoc = await this.users.findById(userId);
     const updatedUnreadNotifications = userDoc.unreadNotifications.filter(
       (note) => note.toString() !== notificationId,
     );
     userDoc.unreadNotifications = updatedUnreadNotifications;
-    const user = this.userDocToIUser(await userDoc.save());
+    const user = new UserDto(await userDoc.save());
     this.eventEmitter.emit(
       'user.removedUnreadNotification',
       new UserRemovedUnreadNotificationEvent(
@@ -109,7 +88,7 @@ export class UserService {
       invitedUser = await this.createUser(inviteData.email);
     }
     // get inviting user
-    const invitedBy = this.userDocToIUser(await this.users.findById(userId));
+    const invitedBy = new UserDto(await this.users.findById(userId));
     // event: recieved by org to add user to org
     this.eventEmitter.emit(
       'user.invitedToOrg',
@@ -137,7 +116,7 @@ export class UserService {
   }
 
   @OnEvent('org.removed', { async: true })
-  async removeOrg(payload: OrgRemovedEvent) {
+  async removeOrg(payload: OrgRemovedEvent): Promise<UserDto | null> {
     const userDoc = await this.users.findById(payload.removedBy);
     if (userDoc) {
       const orgIndex = userDoc.orgs.findIndex((org) =>
@@ -145,7 +124,7 @@ export class UserService {
       );
       if (orgIndex !== -1) {
         userDoc.orgs.splice(orgIndex, 1);
-        return this.userDocToIUser(await userDoc.save());
+        return new UserDto(await userDoc.save());
       }
     }
     return null;
