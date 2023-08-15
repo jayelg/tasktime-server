@@ -2,13 +2,13 @@ import { Body, Controller, Get, Param, Patch, Post, Req } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserRequestDto } from './dto/updateUserRequest.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { OrgDto } from 'src/org/dto/org.dto';
 import { InviteToOrgDto } from './dto/inviteToOrg.dto';
-import { stringify } from 'querystring';
 import {
   CheckAbilities,
   ManageOrgAbility,
 } from 'src/ability/abilities.decorator';
+import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
+import { UserDto } from './dto/user.dto';
 
 // This endpoint is used for own user profile
 // Other users can be accessed through the 'org/:orgId/members/' endpoint
@@ -18,12 +18,15 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  async getProfile(@Req() req) {
+  async getProfile(@Req() req: UserRequestDto): Promise<UserDto> {
     return await this.userService.getUser(req.user.id);
   }
 
   @Patch()
-  async updateUser(@Req() req, @Body() updates: UpdateUserRequestDto) {
+  async updateUser(
+    @Req() req: UserRequestDto,
+    @Body() updates: UpdateUserRequestDto,
+  ): Promise<UserDto> {
     return await this.userService.updateUser(req.user.id, updates);
   }
 
