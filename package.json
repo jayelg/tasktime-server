@@ -94,5 +94,11 @@
     "moduleNameMapper": {
       "^src/(.*)$": "<rootDir>/$1"
     }
-  }
+  },
+  "overrides": {
+    "@nestjs-modules/mailer": {
+      "@nestjs/common": "$@nestjs/common",
+      "@nestjs/core": "$@nestjs/core"
+    }
+}
 }
