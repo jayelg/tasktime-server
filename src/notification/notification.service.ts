@@ -100,12 +100,15 @@ export class NotificationService {
     }
   }
 
-  async deleteNotification(user: IUser, notificationId: string): Promise<void> {
+  async deleteNotification(
+    userId: string,
+    notificationId: string,
+  ): Promise<void> {
     try {
       const notification = this.NotificationDocToINotification(
         await this.notifications.findById(notificationId),
       );
-      if (!(notification.user === user._id)) {
+      if (!(notification.user === userId)) {
         throw new UnauthorizedException();
       }
       await this.notifications.findByIdAndDelete(notificationId);
