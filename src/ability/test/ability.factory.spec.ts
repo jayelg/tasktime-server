@@ -1,4 +1,4 @@
-import { AbilityFactory } from './ability.factory';
+import { AbilityFactory } from '../ability.factory';
 
 describe('AbilityFactory', () => {
   it('should be defined', () => {
