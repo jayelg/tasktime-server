@@ -1,11 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationController } from '../notification.controller';
 import { NotificationService } from '../notification.service';
-import { Model } from 'mongoose';
 
 describe('NotificationController', () => {
   let controller: NotificationController;
-  let notificationModel: Model<Notification>;
 
   const mockNotificationService = {
     getAllNotifications: jest.fn(),
