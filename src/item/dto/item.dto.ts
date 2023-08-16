@@ -6,9 +6,9 @@ import {
   IsOptional,
   IsBoolean,
 } from 'class-validator';
-import { IItem } from '../interface/item.interface';
+import { Item } from '../item.schema';
 
-export class ItemDto implements IItem {
+export class ItemDto {
   @IsString()
   @IsNotEmpty()
   _id: string;
@@ -73,6 +73,28 @@ export class ItemDto implements IItem {
   @IsString()
   successorItemId: string;
 
-  @IsString()
-  itemObjects: object;
+  // @IsArray()
+  // itemObjects: object[];
+
+  constructor(data: Item | ItemDto) {
+    this._id = data._id.toString();
+    this.project = data.project.toString();
+    this.name = data.name;
+    this.creator = data.creator.toString();
+    this.createdAt = data.createdAt;
+    this.updatedAt = data.updatedAt;
+    this.description = data.description;
+    this.allocatedTo = data.allocatedTo.map((user) => user.toString());
+    this.timeAllocated = data.timeAllocated;
+    this.timeSpent = data.timeSpent;
+    this.isComplete = data.isComplete;
+    this.reqReview = data.reqReview;
+    this.reviewers = data.reviewers.map((user) => user.toString());
+    this.colour = data.colour;
+    this.nestedItemIds = data.nestedItemIds.map((itemId) => itemId.toString());
+    this.parentItemId = data.parentItemId.toString();
+    this.predecessorItemId = data.predecessorItemId.toString();
+    this.successorItemId = data.successorItemId.toString();
+    // this.itemObjects = data.itemObjects.map((object) => object._id.toString());
+  }
 }
