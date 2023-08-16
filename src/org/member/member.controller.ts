@@ -35,7 +35,7 @@ export class MemberController {
     };
   }
 
-  @Post('acceptInvite')
+  @Post(':orgId/member/acceptInvite')
   async acceptInvite(@Req() req, @Param('orgId') orgId: string) {
     // check user is a member of org
     // check if user already has org
