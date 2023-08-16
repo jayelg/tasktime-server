@@ -1,16 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Item, ItemDocument } from './item.schema';
-import { Project } from '../project/project.schema';
 import mongoose, { Model, Types } from 'mongoose';
 import { NewItemDto } from './dto/newItem.dto';
 import { IItem } from './interface/item.interface';
+import { ItemDto } from './dto/item.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ItemCreatedEvent } from './event/itemCreated.event';
+import { ItemDeletedEvent } from './event/itemDeleted.event';
 
 @Injectable()
 export class ItemService {
   constructor(
     @InjectModel('Item') private readonly items: Model<Item>,
-    @InjectModel('Project') private readonly projects: Model<Project>,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   private itemDocToIitem(itemDoc: ItemDocument): IItem {
@@ -34,16 +37,9 @@ export class ItemService {
     return item;
   }
 
-  async getAllItems(projectId: string) {
-    const populatedProject = await this.projects
-      .findById(projectId)
-      .populate('items');
-    if (!populatedProject) {
-      throw new NotFoundException(
-        `Get All Items Service: Project ${projectId} not found`,
-      );
-    }
-    return populatedProject.items;
+  async getItems(itemIds: string[]) {
+    const itemDocs = await this.items.find({ _id: { $in: itemIds } }).exec();
+    return itemDocs.map((item) => new ItemDto(item));
   }
 
   // todo add check user and role authorization
@@ -71,16 +67,16 @@ export class ItemService {
         newItem.predecessorItemId || projectId,
       ),
     });
-
-    try {
-      await this.projects.updateOne(
-        { _id: projectId },
-        { $push: { items: formattedItem.toObject() } },
-      );
-      return formattedItem;
-    } catch (error) {
-      throw error;
-    }
+    this.eventEmitter.emit(
+      'item.created',
+      new ItemCreatedEvent(
+        formattedItem._id.toString(),
+        formattedItem.project.toString(),
+        formattedItem.createdAt,
+        formattedItem.creator.toString(),
+      ),
+    );
+    return formattedItem;
   }
 
   async updateItem(itemId: string, changes: object) {
@@ -99,37 +95,31 @@ export class ItemService {
     }
   }
 
-  async deleteItem(projectId: string, itemId: string) {
-    const project = await this.projects.findById(projectId);
-    if (!project) {
-      throw new NotFoundException(
-        `Delete Item Service: Project ${projectId} not found`,
-      );
-    }
-    const itemIndex = project.items.findIndex(
-      (item: mongoose.Types.ObjectId) => item.toString() === itemId,
+  async deleteItem(itemId: string) {
+    const item = await this.items.findByIdAndDelete(itemId);
+    this.eventEmitter.emit(
+      'item.created',
+      new ItemDeletedEvent(
+        itemId,
+        item.project.toString(),
+        new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
+        item.creator.toString(),
+      ),
     );
-    if (itemIndex === -1) {
-      throw new NotFoundException(
-        `Delete Item Service: Item ${itemId} not found`,
-      );
-    }
-    project.items.splice(itemIndex, 1);
-    try {
-      await project.save();
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async deleteAllItems(projectId: string) {
-    const project = await this.projects.findById(projectId);
-    if (!project) {
-      throw new NotFoundException(
-        `Delete All Items Service: Project ${projectId} not found`,
-      );
-    }
-    project.items = [];
-    await project.save();
+    // implement in the project service
+    // const itemIndex = project.items.findIndex(
+    //   (item: mongoose.Types.ObjectId) => item.toString() === itemId,
+    // );
+    // if (itemIndex === -1) {
+    //   throw new NotFoundException(
+    //     `Delete Item Service: Item ${itemId} not found`,
+    //   );
+    // }
+    // project.items.splice(itemIndex, 1);
+    // try {
+    //   await project.save();
+    // } catch (error) {
+    //   throw error;
+    // }
   }
 }
