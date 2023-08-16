@@ -1,15 +1,28 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrgController } from '../org.controller';
-import { UserModule } from 'src/user/user.module';
+import { OrgService } from '../org.service';
 
 describe('OrgController', () => {
   let controller: OrgController;
 
+  const mockOrgService = {
+    getOrgs: jest.fn(),
+    getOrg: jest.fn(),
+    createOrg: jest.fn(),
+    updateOrg: jest.fn(),
+    deleteOrg: jest.fn(),
+    removeMember: jest.fn(),
+    removeProject: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [UserModule],
       controllers: [OrgController],
-    }).compile();
+      providers: [OrgService],
+    })
+      .overrideProvider(OrgService)
+      .useValue(mockOrgService)
+      .compile();
 
     controller = module.get<OrgController>(OrgController);
   });
