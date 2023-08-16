@@ -1,28 +1,30 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationController } from '../notification.controller';
 import { NotificationService } from '../notification.service';
-import { getModelToken } from '@nestjs/mongoose';
-import { UserService } from 'src/user/user.service';
+import { Model } from 'mongoose';
 
 describe('NotificationController', () => {
   let controller: NotificationController;
+  let notificationModel: Model<Notification>;
+
+  const mockNotificationService = {
+    getAllNotifications: jest.fn(),
+    getNotification: jest.fn(),
+    createNotification: jest.fn(),
+    updateUnread: jest.fn(),
+    deleteNotification: jest.fn(),
+    removeMember: jest.fn(),
+    removeProject: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [NotificationController],
-      providers: [
-        NotificationService,
-        UserService,
-        {
-          provide: getModelToken('Notification'),
-          useValue: {},
-        },
-        {
-          provide: getModelToken('User'),
-          useValue: {},
-        },
-      ],
-    }).compile();
+      providers: [NotificationService],
+    })
+      .overrideProvider(NotificationService)
+      .useValue(mockNotificationService)
+      .compile();
 
     controller = module.get<NotificationController>(NotificationController);
   });
