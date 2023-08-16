@@ -1,34 +1,27 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProjectController } from '../project.controller';
 import { ProjectService } from '../project.service';
-import { getModelToken } from '@nestjs/mongoose';
-import { OrgService } from 'src/org/org.service';
-import { UserService } from 'src/user/user.service';
+import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
 
 describe('ProjectController', () => {
   let controller: ProjectController;
 
+  const mockProjectService = {
+    getProject: jest.fn(),
+    createProject: jest.fn(),
+    updateProject: jest.fn(),
+    deleteProject: jest.fn(),
+    getSelectedProjects: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProjectController],
-      providers: [
-        ProjectService,
-        OrgService,
-        UserService,
-        {
-          provide: getModelToken('Project'),
-          useValue: {},
-        },
-        {
-          provide: getModelToken('Org'),
-          useValue: {},
-        },
-        {
-          provide: getModelToken('User'),
-          useValue: {},
-        },
-      ],
-    }).compile();
+      providers: [ProjectService],
+    })
+      .overrideProvider(ProjectService)
+      .useValue(mockProjectService)
+      .compile();
 
     controller = module.get<ProjectController>(ProjectController);
   });
