@@ -8,6 +8,7 @@ import {
 } from 'class-validator';
 import { ProjectMemberDto } from './projectMember.dto';
 import { IProject } from '../interface/project.interface';
+import { Project } from '../project.schema';
 
 export class ProjectDto implements IProject {
   @IsString()
@@ -57,4 +58,20 @@ export class ProjectDto implements IProject {
 
   @IsArray()
   items: string[];
+
+  constructor(data: Project | ProjectDto) {
+    this._id = data._id.toString();
+    this.org = data.org.toString();
+    this.name = data.name;
+    this.creator = data.creator.toString();
+    this.createdAt = data.createdAt;
+    this.updatedAt = data.updatedAt;
+    this.description = data.description;
+    this.members = data.members.map((member) => member._id.toString());
+    this.timeAllocated = data.timeAllocated;
+    this.isComplete = data.isComplete;
+    this.isHidden = data.isHidden;
+    this.events = data.events.map((event) => event._id.toString());
+    this.items = data.items.map((item) => item._id.toString());
+  }
 }
