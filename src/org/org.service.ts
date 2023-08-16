@@ -15,6 +15,7 @@ import { ProjectCreatedEvent } from 'src/project/event/projectCreated.event';
 import { MemberInvitedEvent } from './event/memberInvited.event';
 import { UserInvitedToOrgEvent } from 'src/user/event/userInvitedToOrg.event';
 import { OrgDto } from './dto/org.dto';
+import { OrgInviteAcceptedEvent } from './event/orgInviteAccepted.event';
 
 @Injectable()
 export class OrgService {
@@ -159,6 +160,17 @@ export class OrgService {
         .exec();
     } catch (error) {
       throw error;
+    }
+  }
+
+  // Emit event to be accepted by userService
+  // userService should then add org to user
+  async acceptInvite(userId: string, orgId: string) {
+    if (await this.getOrg(orgId)) {
+      this.eventEmitter.emit(
+        'org.inviteAccepted',
+        new OrgInviteAcceptedEvent(userId, orgId),
+      );
     }
   }
 
