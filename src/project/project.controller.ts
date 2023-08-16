@@ -9,8 +9,8 @@ import {
   Req,
 } from '@nestjs/common';
 import { ProjectService } from './project.service';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { CreateProjectDto, UpdateProjectDto } from './project.dto';
+import { CreateProjectDto } from './dto/createProject.dto';
+import { UpdateProjectDto } from './dto/updateProject.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { IProject } from './interface/project.interface';
 import { SelectedProjectsDto } from './dto/selectedProjects.dto';
@@ -23,6 +23,7 @@ import {
   ViewProjectAbility,
 } from 'src/ability/abilities.decorator';
 import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
+import { ProjectDto } from './dto/project.dto';
 
 @Controller('org/:orgId/project')
 @ApiTags('project')
@@ -31,7 +32,10 @@ export class ProjectController {
 
   @Get(':projectId')
   @CheckAbilities(new ViewProjectAbility())
-  async getProject(@Req() req, @Param('projectId') projectId: string) {
+  async getProject(
+    @Req() req,
+    @Param('projectId') projectId: string,
+  ): Promise<ProjectDto> {
     return await this.projectService.getProject(projectId);
   }
 
@@ -42,7 +46,7 @@ export class ProjectController {
   async getSelectedProjects(
     @Req() req: UserRequestDto,
     @Body('projectId') body: SelectedProjectsDto,
-  ): Promise<IProject[]> {
+  ): Promise<ProjectDto[]> {
     return await this.projectService.getSelectedProjects(
       req.user.id,
       body.projectIds,
@@ -54,7 +58,7 @@ export class ProjectController {
   async createProject(
     @Req() req: UserRequestDto,
     @Body() newProject: CreateProjectDto,
-  ): Promise<IProject> {
+  ): Promise<ProjectDto> {
     // todo implement authorization
     return await this.projectService.createProject(
       req.user.id,
@@ -70,7 +74,7 @@ export class ProjectController {
     @Req() req: UserRequestDto,
     @Param('projectId') projectId: string,
     @Body() changes: UpdateProjectDto,
-  ) {
+  ): Promise<ProjectDto> {
     return await this.projectService.updateProject(projectId, changes);
   }
   @CheckAbilities(new DeleteProjectAbility())
