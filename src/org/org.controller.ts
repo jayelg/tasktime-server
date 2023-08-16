@@ -68,4 +68,11 @@ export class OrgController {
   async deleteOrg(@Req() req: UserRequestDto, @Param('orgId') orgId: string) {
     return await this.orgService.deleteOrg(orgId);
   }
+
+  /*    :orgId/member    */
+
+  @Post(':orgId/member/acceptInvite')
+  async acceptInvite(@Req() req, @Param('orgId') orgId: string) {
+    await this.orgService.acceptInvite(req.user.id, orgId);
+  }
 }
