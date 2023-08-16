@@ -3,16 +3,15 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Notification, NotificationDocument } from './notification.schema';
+import { Notification } from './notification.schema';
 import mongoose, { Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { CreateNotificationDto } from './dto/createNotification.dto';
-import { INotification } from './interface/notification.interface';
-import { IUser } from 'src/user/interface/user.interface';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { MemberInvitedEvent } from 'src/org/event/memberInvited.event';
 import { NotificationMemberInvitedEvent } from './event/notificationMemberInvited.event';
 import { NotificationDeletedEvent } from './event/notificationDeleted.event';
+import { NotificationDto } from './dto/notification.dto';
 
 @Injectable()
 export class NotificationService {
@@ -24,19 +23,8 @@ export class NotificationService {
 
   notFoundError = 'Notification not found';
 
-  private NotificationDocToINotification(
-    notificationDoc: NotificationDocument,
-  ) {
-    const notification: INotification = {
-      ...notificationDoc.toJSON(),
-      _id: notificationDoc._id.toString(),
-      user: notificationDoc.user.toString(),
-    };
-    return notification;
-  }
-
   // todo: return pagnated result instead of all
-  async getAllNotifications(userId: string): Promise<INotification[]> {
+  async getAllNotifications(userId: string): Promise<NotificationDto[]> {
     try {
       const notifications = await this.notifications
         .find({ user: userId })
@@ -46,9 +34,7 @@ export class NotificationService {
           `Get All Notifications Service: No notifications for ${userId}`,
         );
       } else {
-        return notifications.map((note) =>
-          this.NotificationDocToINotification(note),
-        );
+        return notifications.map((note) => new NotificationDto(note));
       }
     } catch (error) {
       // todo: log error
@@ -56,13 +42,14 @@ export class NotificationService {
     }
   }
 
+  // todo move auth to CASL
   async getNotification(
     userId: string,
     notificationId: string,
-  ): Promise<INotification> {
+  ): Promise<NotificationDto> {
     try {
       const notificationDoc = await this.notifications.findById(notificationId);
-      const notification = this.NotificationDocToINotification(notificationDoc);
+      const notification = new NotificationDto(notificationDoc);
       if (notification.user === userId) {
         return notification;
       }
@@ -73,28 +60,26 @@ export class NotificationService {
 
   async createNotification(
     notificationData: CreateNotificationDto,
-  ): Promise<INotification> {
+  ): Promise<NotificationDto> {
     const newNotification = new this.notifications({
       ...notificationData,
       user: new Types.ObjectId(notificationData.user),
       createdAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
       unread: true,
     });
-    return this.NotificationDocToINotification(await newNotification.save());
+    return new NotificationDto(await newNotification.save());
   }
 
   async updateUnread(
     notificationId: string,
     newUnread: boolean,
-  ): Promise<INotification> {
+  ): Promise<NotificationDto> {
     try {
-      const notificationDoc = await this.notifications.findByIdAndUpdate(
-        notificationId,
-        {
+      return new NotificationDto(
+        await this.notifications.findByIdAndUpdate(notificationId, {
           unread: newUnread,
-        },
+        }),
       );
-      return this.NotificationDocToINotification(notificationDoc);
     } catch (error) {
       throw new NotFoundException(this.notFoundError);
     }
@@ -105,7 +90,7 @@ export class NotificationService {
     notificationId: string,
   ): Promise<void> {
     try {
-      const notification = this.NotificationDocToINotification(
+      const notification = new NotificationDto(
         await this.notifications.findById(notificationId),
       );
       if (!(notification.user === userId)) {
