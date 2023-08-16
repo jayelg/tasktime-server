@@ -9,7 +9,6 @@ import {
   Req,
 } from '@nestjs/common';
 import { ItemService } from './item.service';
-import { Item } from './item.schema';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { NewItemDto } from './dto/newItem.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -17,7 +16,6 @@ import {
   CheckAbilities,
   CreateItemAbility,
   DeleteItemAbility,
-  ManageProjectAbility,
   UpdateItemAbility,
   ViewProjectAbility,
 } from 'src/ability/abilities.decorator';
@@ -29,52 +27,15 @@ import { UpdateItemDto } from './dto/updateItem.dto';
 export class ItemController {
   constructor(private itemService: ItemService) {}
 
-  // replaced with class-validator dto
-  // private checkRequest(
-  //   requiredProps: string[],
-  //   request: any,
-  //   optionalProps: string[] = [],
-  // ) {
-  //   const missingProps = [];
-  //   const invalidProps = [];
-  //   const allowedProps = [...requiredProps, ...optionalProps];
-  //   for (const property of requiredProps) {
-  //     if (!request.hasOwnProperty(property) || !request[property]) {
-  //       missingProps.push(property);
-  //     }
-  //   }
-  //   if (allowedProps.length > 0) {
-  //     for (const property in request) {
-  //       if (!allowedProps.includes(property)) {
-  //         invalidProps.push(property);
-  //       }
-  //     }
-  //   }
-  //   if (missingProps.length > 0 || invalidProps.length > 0) {
-  //     throw new Error(
-  //       (missingProps.length > 0
-  //         ? 'The following properties are missing: ' +
-  //           missingProps.join(', ') +
-  //           '. '
-  //         : '') +
-  //         (invalidProps.length > 0
-  //           ? 'The following properties are either not valid or cannot be modified: ' +
-  //             invalidProps.join(', ') +
-  //             '.'
-  //           : ''),
-  //     );
-  //   }
-  // }
-
   @Get()
   @CheckAbilities(new ViewProjectAbility())
-  async getAllItems(@Param('projectId') projectId: string) {
-    return this.itemService.getAllItems(projectId);
+  async getItems(@Body() itemIds: string[]) {
+    return this.itemService.getItems(itemIds);
   }
 
   @Get(':itemId')
   @CheckAbilities(new ViewProjectAbility())
-  async getItems(@Param('itemId') itemId: string): Promise<IItem> {
+  async getItem(@Param('itemId') itemId: string): Promise<IItem> {
     return this.itemService.getItem(itemId);
   }
 
@@ -125,16 +86,7 @@ export class ItemController {
 
   @Delete(':itemId')
   @CheckAbilities(new DeleteItemAbility())
-  async deleteItem(
-    @Param('projectId') projectId: string,
-    @Param('itemId') itemId: string,
-  ) {
-    return await this.itemService.deleteItem(projectId, itemId);
-  }
-
-  @Delete()
-  @CheckAbilities(new ManageProjectAbility())
-  async deleteAllItems(@Param('projectId') projectId: string) {
-    return await this.itemService.deleteAllItems(projectId);
+  async deleteItem(@Param('itemId') itemId: string) {
+    return await this.itemService.deleteItem(itemId);
   }
 }
