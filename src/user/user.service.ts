@@ -14,6 +14,7 @@ import { NotificationMemberInvitedEvent } from 'src/notification/event/notificat
 import { MagicLoginEvent } from 'src/auth/event/magicLogin.event';
 import { UserLoginEvent } from './event/userLogin.event';
 import { UserDto } from './dto/user.dto';
+import { OrgInviteAcceptedEvent } from 'src/org/event/orgInviteAccepted.event';
 
 @Injectable()
 export class UserService {
@@ -150,5 +151,10 @@ export class UserService {
       'user.login',
       new UserLoginEvent(user.firstName, user.email, payload.url, newUser),
     );
+  }
+
+  @OnEvent('org.inviteAccepted', { async: true })
+  async addOrgToUser(payload: OrgInviteAcceptedEvent) {
+    await this.updateUser(payload.userId, { orgs: [payload.orgId] });
   }
 }
