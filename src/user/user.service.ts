@@ -98,7 +98,7 @@ export class UserService {
         orgId,
         inviteData.role,
         new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-        invitedBy._id,
+        invitedBy._id.toString(),
         invitedBy.firstName,
       ),
     );
