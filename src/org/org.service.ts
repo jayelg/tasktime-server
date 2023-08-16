@@ -1,12 +1,10 @@
 import {
   Injectable,
   NotFoundException,
-  NotAcceptableException,
-  ServiceUnavailableException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, MongooseError, Types } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Org, OrgDocument } from './org.schema';
 import { IOrg, IOrgServiceUpdates } from './interface/org.interface';
 import { IMember } from './interface/member.interface';
@@ -14,9 +12,9 @@ import { CreateOrgDto } from './dto/createOrg.dto';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { OrgCreatedEvent } from './event/orgCreated.event';
 import { ProjectCreatedEvent } from 'src/project/event/projectCreated.event';
-import { NewMemberRequestDto } from './dto/newMemberRequest.dto';
 import { MemberInvitedEvent } from './event/memberInvited.event';
 import { UserInvitedToOrgEvent } from 'src/user/event/userInvitedToOrg.event';
+import { OrgDto } from './dto/org.dto';
 
 @Injectable()
 export class OrgService {
@@ -35,7 +33,7 @@ export class OrgService {
       if (!orgDoc) {
         throw new NotFoundException('org not found');
       }
-      const member = await this.getOrgMember(userId, this.orgDoctoIOrg(orgDoc));
+      const member = await this.getOrgMember(userId, new OrgDto(orgDoc));
       // the order defines the heirachy eg. admin has all user privilages
       const permissionLevels = [
         'orgViewer',
@@ -56,26 +54,12 @@ export class OrgService {
   }
 
   // public interface for the above method
+  // remove after abilities guard implemented
   async authorizeUserForOrg(memberId: string, orgId: string, role: string) {
     await this.getOrgAndAuthorizeUser(memberId, orgId, role);
   }
 
-  orgDoctoIOrg(orgDoc: OrgDocument): IOrg {
-    const org: IOrg = {
-      ...orgDoc.toJSON(),
-      // convert all objectId types to strings
-      _id: orgDoc._id.toString(),
-      // fix below seems to expose a lot more than necessery??
-      members: orgDoc.members.map((member) => ({
-        _id: member._id.toString(),
-        role: member.role,
-      })),
-      projects: orgDoc.projects.map((projectId) => projectId.toString()),
-    };
-    return org;
-  }
-
-  private getOrgMember(userId: string, org: IOrg) {
+  private getOrgMember(userId: string, org: OrgDto) {
     const member = org.members.find((member) => member._id === userId);
     if (member) {
       return member;
@@ -84,24 +68,24 @@ export class OrgService {
     }
   }
 
-  async getOrgs(userId: string, orgIds: string[]): Promise<IOrg[]> {
+  async getOrgs(userId: string, orgIds: string[]): Promise<OrgDto[]> {
     const orgDocs = await this.orgs.find({
       _id: { $in: orgIds },
       members: { $elemMatch: { _id: userId } },
     });
-    const orgs = orgDocs.map((org) => this.orgDoctoIOrg(org));
+    const orgs = orgDocs.map((org) => new OrgDto(org));
     return orgs;
   }
 
-  async getOrg(orgId: string): Promise<IOrg> {
+  async getOrg(orgId: string): Promise<OrgDto> {
     try {
-      return this.orgDoctoIOrg(await this.orgs.findById(orgId));
+      return new OrgDto(await this.orgs.findById(orgId));
     } catch (error) {
       throw error;
     }
   }
 
-  async createOrg(userId: string, newOrg: CreateOrgDto): Promise<IOrg> {
+  async createOrg(userId: string, newOrg: CreateOrgDto): Promise<OrgDto> {
     try {
       const formattedOrg = new this.orgs({
         name: newOrg.name,
@@ -109,8 +93,7 @@ export class OrgService {
         createdAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
         updatedAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
       });
-      const createdOrgDoc = await formattedOrg.save();
-      const org = this.orgDoctoIOrg(createdOrgDoc);
+      const org = new OrgDto(await formattedOrg.save());
       this.eventEmitter.emit(
         'org.created',
         new OrgCreatedEvent(org._id, org.name, org.createdAt, userId),
@@ -125,12 +108,11 @@ export class OrgService {
   async updateOrg(
     orgId: string,
     orgUpdates: IOrgServiceUpdates,
-  ): Promise<IOrg> {
+  ): Promise<OrgDto> {
     try {
       const orgDoc = await this.orgs.findById(orgId);
       Object.assign(orgDoc, orgUpdates);
-      const updatedOrg = await orgDoc.save();
-      return this.orgDoctoIOrg(updatedOrg);
+      return new OrgDto(await orgDoc.save());
     } catch (error) {
       // todo: log error
       throw error;
@@ -156,7 +138,7 @@ export class OrgService {
       );
       if (memberIndex !== -1) {
         orgDoc.members.splice(memberIndex, 1);
-        return this.orgDoctoIOrg(await orgDoc.save());
+        return new OrgDto(await orgDoc.save());
       } else {
         throw new NotFoundException('Member not found in the organization.');
       }
@@ -220,12 +202,11 @@ export class OrgService {
         payload.orgId,
         'orgAdmin',
       );
-      const newMemberObjectId = new Types.ObjectId(payload.inviteeUserId);
       orgDoc.members.push({
-        _id: newMemberObjectId,
+        _id: new Types.ObjectId(payload.inviteeUserId),
         role: payload.role,
       });
-      const org = this.orgDoctoIOrg(await orgDoc.save());
+      const org = new OrgDto(await orgDoc.save());
       this.eventEmitter.emit(
         'org.memberInvited',
         new MemberInvitedEvent(
