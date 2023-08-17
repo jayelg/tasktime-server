@@ -3,28 +3,12 @@ import {
   IsNotEmpty,
   IsUrl,
   IsOptional,
-  IsArray,
+  IsBoolean,
 } from 'class-validator';
-import { IUpdateUser } from '../interface/updateUser.interface';
+import { ArrayModification, UpdateUserDto } from './updateUser.dto';
+import { Exclude } from 'class-transformer';
 
-export class UpdateUserRequestDto implements IUpdateUser {
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  firstName: string;
-
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  lastName?: string;
-
-  @IsOptional()
-  @IsUrl()
-  @IsNotEmpty()
-  avatar?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsNotEmpty()
-  personalProjects?: string[];
+export class UpdateUserRequestDto extends UpdateUserDto {
+  @Exclude()
+  orgs; // set from the org module and updated as an event effect
 }
