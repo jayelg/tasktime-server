@@ -9,13 +9,6 @@ import {
 } from '../../test/utils/mongoTest.module';
 import { Model, Types } from 'mongoose';
 import { UserDto } from 'src/user/dto/user.dto';
-import { UserInvitedToOrgEvent } from '../event/userInvitedToOrg.event';
-import { OrgRemovedEvent } from 'src/org/event/orgRemoved.event';
-import { OrgCreatedEvent } from 'src/org/event/orgCreated.event';
-import { NotificationMemberInvitedEvent } from 'src/notification/event/notificationMemberInvited.event';
-import { INotification } from 'src/notification/interface/notification.interface';
-import { MagicLoginEvent } from 'src/auth/event/magicLogin.event';
-import { UserLoginEvent } from '../event/userLogin.event';
 
 const mockEventEmitter = {
   emit: jest.fn(),
@@ -134,191 +127,193 @@ describe('UserService', () => {
     });
   });
 
-  describe('removeUnreadNotification', () => {
-    it('should removed the requested notification', async () => {
-      // Data in request
-      const userId = '64cb9221153711233158ff78';
-      const notification = '64cb9221153711233158ff73';
-      // Create a initial user in the db
-      const secondNotification = '64cb9221153711233158ff71';
-      const initialUser = await userModel.create({
-        _id: new Types.ObjectId(userId),
-        unreadNotifications: [
-          new Types.ObjectId(notification),
-          new Types.ObjectId(secondNotification),
-        ],
-      });
-      const expectedResult = new UserDto(initialUser);
-      expectedResult.unreadNotifications = [secondNotification];
+  /*---------Below methods have been refactored into the listeners folder---------*/
 
-      const result = await service.removeUnreadNotification(
-        userId,
-        notification,
-      );
+  // describe('removeUnreadNotification', () => {
+  //   it('should removed the requested notification', async () => {
+  //     // Data in request
+  //     const userId = '64cb9221153711233158ff78';
+  //     const notification = '64cb9221153711233158ff73';
+  //     // Create a initial user in the db
+  //     const secondNotification = '64cb9221153711233158ff71';
+  //     const initialUser = await userModel.create({
+  //       _id: new Types.ObjectId(userId),
+  //       unreadNotifications: [
+  //         new Types.ObjectId(notification),
+  //         new Types.ObjectId(secondNotification),
+  //       ],
+  //     });
+  //     const expectedResult = new UserDto(initialUser);
+  //     expectedResult.unreadNotifications = [secondNotification];
 
-      expect(result).toEqual(expectedResult);
-    });
-    it('should emit an event', async () => {
-      // Data in request
-      const userId = '64cb9221153711233158ff78';
-      const notification = '64cb9221153711233158ff73';
-      // Create a initial user in the db
-      await userModel.create({
-        _id: new Types.ObjectId(userId),
-        unreadNotifications: [new Types.ObjectId(notification)],
-      });
-      const mockEventEmit = jest.spyOn(mockEventEmitter, 'emit');
+  //     const result = await service.removeUnreadNotification(
+  //       userId,
+  //       notification,
+  //     );
 
-      await service.removeUnreadNotification(userId, notification);
+  //     expect(result).toEqual(expectedResult);
+  //   });
+  //   it('should emit an event', async () => {
+  //     // Data in request
+  //     const userId = '64cb9221153711233158ff78';
+  //     const notification = '64cb9221153711233158ff73';
+  //     // Create a initial user in the db
+  //     await userModel.create({
+  //       _id: new Types.ObjectId(userId),
+  //       unreadNotifications: [new Types.ObjectId(notification)],
+  //     });
+  //     const mockEventEmit = jest.spyOn(mockEventEmitter, 'emit');
 
-      expect(mockEventEmit).toBeCalled();
-    });
-  });
+  //     await service.removeUnreadNotification(userId, notification);
 
-  describe('handleInvitedOrgMember', () => {
-    it('should emit an event with details of the invited org member', async () => {
-      // Data in request
-      const userId = '64cb9221153711233158ff78';
-      const orgId = '64cb9221153711233158ff76';
-      const inviteData = {
-        email: 'testinvite@email.com',
-        role: 'orgMember',
-      };
-      // Create a initial user in the db
-      const invitedUserId = '64cb9221153711233158ff72';
-      const invitedUser = new UserDto(
-        await userModel.create({
-          _id: new Types.ObjectId(invitedUserId),
-          email: inviteData.email,
-        }),
-      );
-      // Create the current user in the db
-      const userFirstName = 'John';
-      const currentUser = new UserDto(
-        await userModel.create({
-          _id: new Types.ObjectId(userId),
-          firstName: userFirstName,
-        }),
-      );
-      const mockEventEmit = jest.spyOn(mockEventEmitter, 'emit');
-      // mock the getUserByEmail method in the userService
-      const mockCreateUserMethod = jest.spyOn(service, 'createUser');
-      mockCreateUserMethod.mockResolvedValue(invitedUser);
+  //     expect(mockEventEmit).toBeCalled();
+  //   });
+  // });
 
-      await service.handleInvitedOrgMember(userId, orgId, inviteData);
+  // describe('handleInvitedOrgMember', () => {
+  //   it('should emit an event with details of the invited org member', async () => {
+  //     // Data in request
+  //     const userId = '64cb9221153711233158ff78';
+  //     const orgId = '64cb9221153711233158ff76';
+  //     const inviteData = {
+  //       email: 'testinvite@email.com',
+  //       role: 'orgMember',
+  //     };
+  //     // Create a initial user in the db
+  //     const invitedUserId = '64cb9221153711233158ff72';
+  //     const invitedUser = new UserDto(
+  //       await userModel.create({
+  //         _id: new Types.ObjectId(invitedUserId),
+  //         email: inviteData.email,
+  //       }),
+  //     );
+  //     // Create the current user in the db
+  //     const userFirstName = 'John';
+  //     const currentUser = new UserDto(
+  //       await userModel.create({
+  //         _id: new Types.ObjectId(userId),
+  //         firstName: userFirstName,
+  //       }),
+  //     );
+  //     const mockEventEmit = jest.spyOn(mockEventEmitter, 'emit');
+  //     // mock the getUserByEmail method in the userService
+  //     const mockCreateUserMethod = jest.spyOn(service, 'createUser');
+  //     mockCreateUserMethod.mockResolvedValue(invitedUser);
 
-      const emittedEventArgs = mockEventEmit.mock.calls[0];
+  //     await service.handleInvitedOrgMember(userId, orgId, inviteData);
 
-      // Assert the properties of the emitted event
-      expect(emittedEventArgs[0]).toEqual('user.invitedToOrg');
-      const userInvitedEvent = emittedEventArgs[1] as UserInvitedToOrgEvent;
-      expect(userInvitedEvent).toBeInstanceOf(UserInvitedToOrgEvent);
-      expect(userInvitedEvent.inviteeUserId).toEqual(invitedUser._id);
-      expect(userInvitedEvent.inviteeEmail).toEqual(inviteData.email);
-      expect(userInvitedEvent.orgId).toEqual(orgId);
-      expect(userInvitedEvent.role).toEqual(inviteData.role);
-      expect(userInvitedEvent.invitedByUserId).toEqual(currentUser._id);
-      expect(userInvitedEvent.invitedByName).toEqual(currentUser.firstName);
-    });
-  });
+  //     const emittedEventArgs = mockEventEmit.mock.calls[0];
 
-  describe('addOrg', () => {
-    it('should add the org in event payload to the user', async () => {
-      const orgId = '64cb9221153711233158ff72';
-      const orgName = 'Test Org Name';
-      const createdAt = 'Test date';
-      const createdBy = '64cb9221153711233158ff78';
-      const payload = new OrgCreatedEvent(orgId, orgName, createdAt, createdBy);
-      await userModel.create({
-        _id: new Types.ObjectId(createdBy),
-      });
+  //     // Assert the properties of the emitted event
+  //     expect(emittedEventArgs[0]).toEqual('user.invitedToOrg');
+  //     const userInvitedEvent = emittedEventArgs[1] as UserInvitedToOrgEvent;
+  //     expect(userInvitedEvent).toBeInstanceOf(UserInvitedToOrgEvent);
+  //     expect(userInvitedEvent.inviteeUserId).toEqual(invitedUser._id);
+  //     expect(userInvitedEvent.inviteeEmail).toEqual(inviteData.email);
+  //     expect(userInvitedEvent.orgId).toEqual(orgId);
+  //     expect(userInvitedEvent.role).toEqual(inviteData.role);
+  //     expect(userInvitedEvent.invitedByUserId).toEqual(currentUser._id);
+  //     expect(userInvitedEvent.invitedByName).toEqual(currentUser.firstName);
+  //   });
+  // });
 
-      await service.addOrg(payload);
+  // describe('addOrg', () => {
+  //   it('should add the org in event payload to the user', async () => {
+  //     const orgId = '64cb9221153711233158ff72';
+  //     const orgName = 'Test Org Name';
+  //     const createdAt = 'Test date';
+  //     const createdBy = '64cb9221153711233158ff78';
+  //     const payload = new OrgCreatedEvent(orgId, orgName, createdAt, createdBy);
+  //     await userModel.create({
+  //       _id: new Types.ObjectId(createdBy),
+  //     });
 
-      const updatedUser = new UserDto(await userModel.findById(createdBy));
+  //     await service.addOrg(payload);
 
-      expect(updatedUser.orgs).toContain(orgId);
-    });
-  });
+  //     const updatedUser = new UserDto(await userModel.findById(createdBy));
 
-  describe('removeOrg', () => {
-    it('should remove the org in event payload from the user', async () => {
-      const orgId = '64cb9221153711233158ff72';
-      const orgName = 'Test Org Name';
-      const createdAt = 'Test date';
-      const createdBy = '64cb9221153711233158ff78';
-      const payload = new OrgRemovedEvent(orgId, orgName, createdAt, createdBy);
-      await userModel.create({
-        _id: new Types.ObjectId(createdBy),
-        orgs: [new Types.ObjectId(orgId)],
-      });
+  //     expect(updatedUser.orgs).toContain(orgId);
+  //   });
+  // });
 
-      await service.removeOrg(payload);
+  // describe('removeOrg', () => {
+  //   it('should remove the org in event payload from the user', async () => {
+  //     const orgId = '64cb9221153711233158ff72';
+  //     const orgName = 'Test Org Name';
+  //     const createdAt = 'Test date';
+  //     const createdBy = '64cb9221153711233158ff78';
+  //     const payload = new OrgRemovedEvent(orgId, orgName, createdAt, createdBy);
+  //     await userModel.create({
+  //       _id: new Types.ObjectId(createdBy),
+  //       orgs: [new Types.ObjectId(orgId)],
+  //     });
 
-      const updatedUser = new UserDto(await userModel.findById(createdBy));
+  //     await service.removeOrg(payload);
 
-      expect(updatedUser.orgs).not.toContain(orgId);
-    });
-  });
+  //     const updatedUser = new UserDto(await userModel.findById(createdBy));
 
-  describe('addUnreadNotification', () => {
-    it('should add the notification in the event payload to the user', async () => {
-      const userId = '64cb9221153711233158ff78';
-      const userEmail = 'test@email.com';
-      const notificaiton: INotification = {
-        _id: '64cb9221153711233158ff72',
-        user: userId,
-        createdAt: 'Test date',
-        unread: true,
-        title: 'Test Title',
-        body: 'Test Body',
-        button: 'Click Here',
-        type: 'test',
-        reference: 'test',
-      };
-      const payload = new NotificationMemberInvitedEvent(
-        notificaiton,
-        userEmail,
-      );
-      await userModel.create({
-        _id: new Types.ObjectId(userId),
-      });
+  //     expect(updatedUser.orgs).not.toContain(orgId);
+  //   });
+  // });
 
-      await service.addUnreadNotification(payload);
+  // describe('addUnreadNotification', () => {
+  //   it('should add the notification in the event payload to the user', async () => {
+  //     const userId = '64cb9221153711233158ff78';
+  //     const userEmail = 'test@email.com';
+  //     const notificaiton: INotification = {
+  //       _id: '64cb9221153711233158ff72',
+  //       user: userId,
+  //       createdAt: 'Test date',
+  //       unread: true,
+  //       title: 'Test Title',
+  //       body: 'Test Body',
+  //       button: 'Click Here',
+  //       type: 'test',
+  //       reference: 'test',
+  //     };
+  //     const payload = new NotificationMemberInvitedEvent(
+  //       notificaiton,
+  //       userEmail,
+  //     );
+  //     await userModel.create({
+  //       _id: new Types.ObjectId(userId),
+  //     });
 
-      const updatedUser = new UserDto(await userModel.findById(userId));
+  //     await service.addUnreadNotification(payload);
 
-      expect(updatedUser.unreadNotifications).toContain(notificaiton._id);
-    });
-  });
+  //     const updatedUser = new UserDto(await userModel.findById(userId));
 
-  describe('getUserForMagicLogin', () => {
-    it('should add user info to payload and emit event', async () => {
-      const userId = '64cb9221153711233158ff78';
-      const newUserEmail = 'newuser@email.com';
-      const url = 'magicLinkURL';
-      const payload = new MagicLoginEvent(newUserEmail, url);
-      const user = await userModel.create({
-        _id: new Types.ObjectId(userId),
-        email: newUserEmail,
-        firstName: 'John',
-      });
-      const mockEventEmit = jest.spyOn(mockEventEmitter, 'emit');
+  //     expect(updatedUser.unreadNotifications).toContain(notificaiton._id);
+  //   });
+  // });
 
-      await service.getUserForMagicLogin(payload);
+  // describe('getUserForMagicLogin', () => {
+  //   it('should add user info to payload and emit event', async () => {
+  //     const userId = '64cb9221153711233158ff78';
+  //     const newUserEmail = 'newuser@email.com';
+  //     const url = 'magicLinkURL';
+  //     const payload = new MagicLoginEvent(newUserEmail, url);
+  //     const user = await userModel.create({
+  //       _id: new Types.ObjectId(userId),
+  //       email: newUserEmail,
+  //       firstName: 'John',
+  //     });
+  //     const mockEventEmit = jest.spyOn(mockEventEmitter, 'emit');
 
-      const emittedEventArgs = mockEventEmit.mock.calls[0];
+  //     await service.getUserForMagicLogin(payload);
 
-      // Assert the properties of the emitted event
-      expect(emittedEventArgs[0]).toEqual('user.login');
-      const userInvitedEvent = emittedEventArgs[1] as UserLoginEvent;
-      expect(userInvitedEvent).toBeInstanceOf(UserLoginEvent);
-      expect(userInvitedEvent.userFirstName).toEqual(user.firstName);
-      expect(userInvitedEvent.email).toEqual(user.email);
-      expect(userInvitedEvent.url).toEqual(url);
-      expect(userInvitedEvent.newUser).toEqual(false);
-    });
-  });
+  //     const emittedEventArgs = mockEventEmit.mock.calls[0];
+
+  //     // Assert the properties of the emitted event
+  //     expect(emittedEventArgs[0]).toEqual('user.login');
+  //     const userInvitedEvent = emittedEventArgs[1] as UserLoginEvent;
+  //     expect(userInvitedEvent).toBeInstanceOf(UserLoginEvent);
+  //     expect(userInvitedEvent.userFirstName).toEqual(user.firstName);
+  //     expect(userInvitedEvent.email).toEqual(user.email);
+  //     expect(userInvitedEvent.url).toEqual(url);
+  //     expect(userInvitedEvent.newUser).toEqual(false);
+  //   });
+  // });
 
   afterAll(async () => {
     await closeInMongodConnection();
