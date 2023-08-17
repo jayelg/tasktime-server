@@ -36,22 +36,18 @@ export class UpdateUserDto {
   avatar?: string;
 
   @IsOptional()
-  @IsArray()
   @IsNotEmpty()
   orgs?: ArrayModification;
 
   @IsOptional()
-  @IsArray()
   @IsNotEmpty()
   personalProjects?: ArrayModification;
 
   @IsOptional()
-  @IsArray()
   @IsNotEmpty()
   unreadNotifications?: ArrayModification;
 
   @IsOptional()
-  @IsArray()
   @IsNotEmpty()
   unreadMessages?: ArrayModification;
 
