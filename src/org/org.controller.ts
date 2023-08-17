@@ -71,6 +71,11 @@ export class OrgController {
 
   /*    :orgId/member    */
 
+  @Post(':orgId/member/acceptInvite')
+  async acceptInvite(@Req() req, @Param('orgId') orgId: string) {
+    await this.orgService.acceptInvite(req.user.id, orgId);
+  }
+
   @Get(':orgId/member/:memberId')
   async getMember(
     @Req() req,
@@ -80,8 +85,16 @@ export class OrgController {
     return await this.orgService.getMember(orgId, memberId);
   }
 
-  @Post(':orgId/member/acceptInvite')
-  async acceptInvite(@Req() req, @Param('orgId') orgId: string) {
-    await this.orgService.acceptInvite(req.user.id, orgId);
+  @Delete(':orgId/member/:memberId')
+  async removeMember(
+    @Req() req,
+    @Param('orgId') orgId: string,
+    @Param('memberId') memberId: string,
+  ) {
+    try {
+      await this.orgService.removeMember(req.user.id, orgId, memberId);
+    } catch (error) {
+      throw error;
+    }
   }
 }
