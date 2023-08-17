@@ -3,11 +3,12 @@ import { OrgController } from './org.controller';
 import { OrgService } from './org.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { OrgSchema } from './org.schema';
+import { OrgListenersService } from './listeners/orgListeners.service';
 
 @Module({
   imports: [MongooseModule.forFeature([{ name: 'Org', schema: OrgSchema }])],
   controllers: [OrgController],
-  providers: [OrgService],
+  providers: [OrgService, OrgListenersService],
   exports: [OrgService],
 })
 export class OrgModule {}
