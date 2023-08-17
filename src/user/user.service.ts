@@ -119,48 +119,4 @@ export class UserService {
       ),
     );
   }
-
-  // Event Listeners
-
-  @OnEvent('org.removed', { async: true })
-  async removeOrg(payload: OrgRemovedEvent): Promise<UserDto | null> {
-    const userDoc = await this.users.findById(payload.removedBy);
-    if (userDoc) {
-      const orgIndex = userDoc.orgs.findIndex((org) =>
-        org.equals(payload.orgId),
-      );
-      if (orgIndex !== -1) {
-        userDoc.orgs.splice(orgIndex, 1);
-        return new UserDto(await userDoc.save());
-      }
-    }
-    return null;
-  }
-
-  @OnEvent('notification.memberInvited', { async: true })
-  async addUnreadNotification(payload: NotificationMemberInvitedEvent) {
-    await this.updateUser(payload.notification.user, {
-      unreadNotifications: [payload.notification._id],
-    });
-  }
-
-  @OnEvent('magicLogin.login', { async: true })
-  async getUserForMagicLogin(payload: MagicLoginEvent) {
-    // check if user exists etc.
-    let user = await this.getUserByEmail(payload.email);
-    let newUser = false;
-    if (!user) {
-      newUser = true;
-      user = await this.createUser(payload.email);
-    }
-    this.eventEmitter.emit(
-      'user.login',
-      new UserLoginEvent(user.firstName, user.email, payload.url, newUser),
-    );
-  }
-
-  @OnEvent('org.inviteAccepted', { async: true })
-  async addOrgToUser(payload: OrgInviteAcceptedEvent) {
-    await this.updateUser(payload.userId, { orgs: [payload.orgId] });
-  }
 }
