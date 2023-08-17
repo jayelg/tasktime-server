@@ -20,6 +20,7 @@ import { UserDto } from 'src/user/dto/user.dto';
 import { MemberDto } from './dto/member.dto';
 import { GetUserEvent } from 'src/user/event/getUser.event';
 import { OrgGetMemberEvent } from './event/orgGetMember.event';
+import { OrgMemberRemovedEvent } from './event/memberRemoved.event';
 
 @Injectable()
 export class OrgService {
@@ -144,7 +145,7 @@ export class OrgService {
     }
   }
 
-  async removeMember(orgId: string, memberId: string) {
+  async removeMember(userId: string, orgId: string, memberId: string) {
     try {
       const orgDoc = await this.orgs.findById(orgId);
       if (!orgDoc) {
@@ -155,7 +156,17 @@ export class OrgService {
       );
       if (memberIndex !== -1) {
         orgDoc.members.splice(memberIndex, 1);
-        return new OrgDto(await orgDoc.save());
+        const org = new OrgDto(await orgDoc.save());
+        this.eventEmitter.emit(
+          'org.removedMember',
+          new OrgMemberRemovedEvent(
+            org._id,
+            org.name,
+            memberId,
+            new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
+            userId,
+          ),
+        );
       } else {
         throw new NotFoundException('Member not found in the organization.');
       }
