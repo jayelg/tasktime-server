@@ -71,6 +71,15 @@ export class OrgController {
 
   /*    :orgId/member    */
 
+  @Get(':orgId/member/:memberId')
+  async getMember(
+    @Req() req,
+    @Param('orgId') orgId: string,
+    @Param('memberId') memberId: string,
+  ) {
+    return await this.orgService.getMember(orgId, memberId);
+  }
+
   @Post(':orgId/member/acceptInvite')
   async acceptInvite(@Req() req, @Param('orgId') orgId: string) {
     await this.orgService.acceptInvite(req.user.id, orgId);
