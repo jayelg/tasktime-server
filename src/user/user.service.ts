@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { User } from './user.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { UpdateUserDto } from './dto/updateUser.dto';
+import { ArrayModification, UpdateUserDto } from './dto/updateUser.dto';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { OrgCreatedEvent } from 'src/org/event/orgCreated.event';
 import { OrgRemovedEvent } from 'src/org/event/orgRemoved.event';
@@ -52,9 +52,24 @@ export class UserService {
   }
 
   async updateUser(userId: string, updates: UpdateUserDto): Promise<UserDto> {
-    return new UserDto(
-      await this.users.findByIdAndUpdate(userId, updates, { new: true }).exec(),
-    );
+    const user = await this.users.findById(userId);
+    // handle operations (add, remove) on arrays
+    for (const property in updates) {
+      if (updates.hasOwnProperty(property)) {
+        if (updates[property] instanceof ArrayModification) {
+          const modification = updates[property];
+          user[property].push(...modification.add);
+          user[property] = user[property].filter(
+            (item) => !modification.remove.includes(item),
+          );
+          // delete so that it is not assigned directly later
+          delete updates[property];
+        }
+      }
+    }
+    Object.assign(user, updates);
+    await user.save();
+    return new UserDto(user);
   }
 
   async removeUnreadNotification(
@@ -106,15 +121,6 @@ export class UserService {
   }
 
   // Event Listeners
-
-  @OnEvent('org.created', { async: true })
-  async addOrg(payload: OrgCreatedEvent) {
-    await this.users.findByIdAndUpdate(
-      payload.createdBy,
-      { $addToSet: { orgs: payload.orgId } },
-      { new: true },
-    );
-  }
 
   @OnEvent('org.removed', { async: true })
   async removeOrg(payload: OrgRemovedEvent): Promise<UserDto | null> {
