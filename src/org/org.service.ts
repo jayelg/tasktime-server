@@ -16,6 +16,10 @@ import { MemberInvitedEvent } from './event/memberInvited.event';
 import { UserInvitedToOrgEvent } from 'src/user/event/userInvitedToOrg.event';
 import { OrgDto } from './dto/org.dto';
 import { OrgInviteAcceptedEvent } from './event/orgInviteAccepted.event';
+import { UserDto } from 'src/user/dto/user.dto';
+import { MemberDto } from './dto/member.dto';
+import { GetUserEvent } from 'src/user/event/getUser.event';
+import { OrgGetMemberEvent } from './event/orgGetMember.event';
 
 @Injectable()
 export class OrgService {
@@ -52,6 +56,18 @@ export class OrgService {
     } catch (error) {
       throw error;
     }
+  }
+
+  private reduceMember(fullUser: UserDto, role: string): MemberDto {
+    return {
+      _id: fullUser._id,
+      role: role,
+      email: fullUser.email,
+      firstName: fullUser.firstName,
+      lastName: fullUser.lastName,
+      avatar: fullUser.avatar,
+      disabled: fullUser.disabled,
+    };
   }
 
   // public interface for the above method
@@ -166,15 +182,29 @@ export class OrgService {
   // Emit event to be accepted by userService
   // userService should then add org to user
   async acceptInvite(userId: string, orgId: string) {
-    if (await this.getOrg(orgId)) {
-      this.eventEmitter.emit(
-        'org.inviteAccepted',
-        new OrgInviteAcceptedEvent(userId, orgId),
-      );
-    }
+    this.eventEmitter.emit(
+      'org.inviteAccepted',
+      new OrgInviteAcceptedEvent(userId, orgId),
+    );
+  }
+
+  async getMember(userId: string, orgId: string) {
+    this.eventEmitter.emit('org.getMember', new OrgGetMemberEvent(userId));
+    const [getUserEvent] = await this.eventEmitter.waitFor('user.getUser', {
+      handleError: false,
+      timeout: 0,
+      filter: (event: GetUserEvent) => event.user._id === userId,
+      Promise: Promise,
+      overload: false,
+    });
+    const org = await this.orgs.findById(orgId);
+    const member = org.members.find((member) => member._id.equals(userId));
+    return this.reduceMember(getUserEvent.user, member.role);
   }
 
   // Event Listeners
+  // move to listeners folder?
+
   @OnEvent('project.created', { async: true })
   async projectCreated(payload: ProjectCreatedEvent) {
     try {
