@@ -6,9 +6,20 @@ import {
   IsArray,
   IsBoolean,
 } from 'class-validator';
-import { IUpdateUser } from '../interface/updateUser.interface';
 
-export class UpdateUserDto implements IUpdateUser {
+export class ArrayModification {
+  @IsOptional()
+  @IsArray()
+  @IsNotEmpty()
+  add?: any[] = [];
+
+  @IsOptional()
+  @IsArray()
+  @IsNotEmpty()
+  remove?: any[] = [];
+}
+
+export class UpdateUserDto {
   @IsOptional()
   @IsString()
   @IsNotEmpty()
@@ -27,22 +38,22 @@ export class UpdateUserDto implements IUpdateUser {
   @IsOptional()
   @IsArray()
   @IsNotEmpty()
-  orgs?: string[];
+  orgs?: ArrayModification;
 
   @IsOptional()
   @IsArray()
   @IsNotEmpty()
-  personalProjects?: string[];
+  personalProjects?: ArrayModification;
 
   @IsOptional()
   @IsArray()
   @IsNotEmpty()
-  unreadNotifications?: string[];
+  unreadNotifications?: ArrayModification;
 
   @IsOptional()
   @IsArray()
   @IsNotEmpty()
-  unreadMessages?: string[];
+  unreadMessages?: ArrayModification;
 
   @IsOptional()
   @IsBoolean()
