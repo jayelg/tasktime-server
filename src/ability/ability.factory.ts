@@ -46,10 +46,15 @@ export class AbilityFactory {
     const { can, build } = new AbilityBuilder<AppAbility>(createMongoAbility);
 
     can(Action.Create, Org);
+
+    let org;;
+    let project;
+    let item;
+
     // get roles from org and project
     if (orgId) {
       try {
-        const org = await this.orgService.getOrg(orgId);
+        org = await this.orgService.getOrg(orgId);
         const orgMember = org.members.find((member) => member._id === userId);
         if (orgMember.role === OrgMemberRole.Admin) {
           can(Action.Read, Project); // can see all project including hidden
@@ -71,13 +76,12 @@ export class AbilityFactory {
 
     if (projectId) {
       try {
-        const project = await this.projectService.getProject(projectId);
+        project = await this.projectService.getProject(projectId);
         const projectMember = project.members.find(
           (member) => member._id === userId,
         );
         if (projectMember.role === ProjectMemberRole.Admin) {
           can(Action.Manage, Project);
-          can(Action.Manage, Item);
         } else if (
           projectMember.role === ProjectMemberRole.Member ||
           projectMember.role === ProjectMemberRole.Admin
@@ -91,10 +95,25 @@ export class AbilityFactory {
 
     if (itemId) {
       try {
-        const item = await this.itemService.getItem(itemId);
+        item = await this.itemService.getItem(itemId);
+        // is the user allocated to the project?
         const itemAllocatedTo = item.allocatedTo.find(
           (user) => user === userId,
         );
+        // check item is in project
+        if (item.project === projectId) {
+          if (itemAllocatedTo === userId || ) {
+            can(Action.Manage, Item);
+          } else {
+            can(Action.Read, Item);
+          }
+        } else if (
+          item.project === ProjectMemberRole.Member ||
+          itemAllocatedTo === ProjectMemberRole.Admin
+        ) {
+          can(Action.Create, Item);
+
+        }
       } catch (error) {
         throw error;
       }
