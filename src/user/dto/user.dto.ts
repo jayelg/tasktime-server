@@ -23,15 +23,15 @@ export class UserDto {
     this.firstName = data.firstName;
     this.lastName = data.lastName;
     this.avatar = data.avatar;
-    this.orgs = data.orgs.map((org) => org._id.toString());
+    this.orgs = data.orgs.map((org) => org.toString());
     this.personalProjects = data.personalProjects.map((project) =>
-      project._id.toString(),
+      project.toString(),
     );
     this.unreadNotifications = data.unreadNotifications.map((note) =>
-      note._id.toString(),
+      note.toString(),
     );
     this.unreadMessages = data.unreadMessages.map((message) =>
-      message._id.toString(),
+      message.toString(),
     );
     this.disabled = data.disabled;
   }
