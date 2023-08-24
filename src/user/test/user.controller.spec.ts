@@ -3,16 +3,17 @@ import { UserController } from '../../user/user.controller';
 import { UserService } from '../../user/user.service';
 import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
 import { createMockUserDto } from './factory/createMockUserDto.factory';
+import { UpdateUserRequestDto } from '../dto/updateUserRequest.dto';
+
+const mockUserService = {
+  getUser: jest.fn(),
+  updateUser: jest.fn(),
+  removeUnreadNotification: jest.fn(),
+  handleInvitedOrgMember: jest.fn(),
+};
 
 describe('UserController', () => {
   let controller: UserController;
-
-  const mockUserService = {
-    getUser: jest.fn(),
-    updateUser: jest.fn(),
-    removeUnreadNotification: jest.fn(),
-    handleInvitedOrgMember: jest.fn(),
-  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -69,7 +70,7 @@ describe('UserController', () => {
       const mockRequest = {
         user: { id: mockUserId, email: mockEmail },
       } as UserRequestDto;
-      const mockUpdateUserData = {
+      const mockUpdateUserData: UpdateUserRequestDto = {
         firstName: 'John',
         lastName: 'Grant',
       };
