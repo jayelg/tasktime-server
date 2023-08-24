@@ -1,26 +1,25 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ItemController } from '../item.controller';
 import { ItemService } from '../item.service';
-import { getModelToken } from '@nestjs/mongoose';
 
 describe('ItemController', () => {
   let controller: ItemController;
 
+  const mockItemService = {
+    getItem: jest.fn(),
+    createItem: jest.fn(),
+    updateItem: jest.fn(),
+    deleteItem: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ItemController],
-      providers: [
-        ItemService,
-        {
-          provide: getModelToken('Item'),
-          useValue: {},
-        },
-        {
-          provide: getModelToken('Project'),
-          useValue: {},
-        },
-      ],
-    }).compile();
+      providers: [ItemService],
+    })
+      .overrideProvider(ItemService)
+      .useValue(mockItemService)
+      .compile();
 
     controller = module.get<ItemController>(ItemController);
   });

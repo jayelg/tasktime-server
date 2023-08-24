@@ -1,32 +1,29 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from '../auth.controller';
 import { AuthService } from '../auth.service';
-import { UserService } from 'src/user/user.service';
-import { JwtService } from '@nestjs/jwt';
-import { getModelToken } from '@nestjs/mongoose';
 import { MagicLoginStrategy } from '../magicLogin.strategy';
-import { ConfigService } from '@nestjs/config';
-import { MailService } from 'src/mail/mail.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
 
+  const mockAuthService = {
+    generateTokens: jest.fn(),
+  };
+
+  const mockMagicLoginStrategy = {
+    send: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [
-        AuthService,
-        UserService,
-        JwtService,
-        MagicLoginStrategy,
-        ConfigService,
-        MailService,
-        {
-          provide: getModelToken('User'),
-          useValue: {},
-        },
-      ],
-    }).compile();
+      providers: [AuthService, MagicLoginStrategy],
+    })
+      .overrideProvider(AuthService)
+      .useValue(mockAuthService)
+      .overrideProvider(MagicLoginStrategy)
+      .useValue(mockMagicLoginStrategy)
+      .compile();
 
     controller = module.get<AuthController>(AuthController);
   });
