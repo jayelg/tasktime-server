@@ -38,6 +38,10 @@ export class AbilityFactory {
     private readonly itemService: ItemService,
   ) {}
 
+  // Orgs contain projects and projects contain items
+  // if user is not a member of org, they do not have abilities for projects
+  // if user is not a member of org or project, they do not have abilities for items
+
   async defineAbility({ userId, orgId, projectId, itemId }: defineAbilityDto) {
     const { can, build } = new AbilityBuilder<AppAbility>(createMongoAbility);
 
@@ -47,7 +51,6 @@ export class AbilityFactory {
     let project;
     let item;
 
-    // get roles from org and project
     try {
       if (orgId) {
         org = await this.orgService.getOrg(orgId);
@@ -70,54 +73,52 @@ export class AbilityFactory {
           ) {
             can(Action.Read, Org);
           }
-        }
-      }
-
-      if (projectId) {
-        project = await this.projectService.getProject(projectId);
-        if (
-          org.projects.includes(project._id) ||
-          org.members.some((member) => member._id === userId)
-        ) {
-          const projectMember = project.members.find(
-            (member) => member._id === userId,
-          );
-          if (projectMember.role === ProjectMemberRole.Admin) {
-            can(Action.Manage, Project);
+          if (projectId) {
+            project = await this.projectService.getProject(projectId);
+            if (org.projects.includes(project._id)) {
+              if (!project.isHidden) {
+                can(Action.Read, Project);
+              }
+              const projectMember = project.members.find(
+                (member) => member._id === userId,
+              );
+              if (projectMember) {
+                if (projectMember)
+                  if (projectMember.role === ProjectMemberRole.Admin) {
+                    can(Action.Manage, Project);
+                  }
+                if (
+                  projectMember.role === ProjectMemberRole.Member ||
+                  projectMember.role === ProjectMemberRole.Admin
+                ) {
+                  can(Action.Create, Item);
+                }
+                if (projectMember.role === ProjectMemberRole.Viewer) {
+                  can(Action.Read, Project);
+                }
+              }
+              if (itemId) {
+                item = await this.itemService.getItem(itemId);
+                // is the user allocated to the project?
+                const itemAllocatedTo = item.allocatedTo.find(
+                  (user) => user === userId,
+                );
+                // check item is in project
+                if (item.project === projectId) {
+                  if (itemAllocatedTo === userId) {
+                    can(Action.Manage, Item);
+                  } else {
+                    can(Action.Read, Item);
+                  }
+                } else if (
+                  item.project === ProjectMemberRole.Member ||
+                  itemAllocatedTo === ProjectMemberRole.Admin
+                ) {
+                  can(Action.Create, Item);
+                }
+              }
+            }
           }
-          if (
-            projectMember.role === ProjectMemberRole.Member ||
-            projectMember.role === ProjectMemberRole.Admin
-          ) {
-            can(Action.Create, Item);
-          }
-          if (
-            project.isHidden === false ||
-            projectMember.role === ProjectMemberRole.Viewer
-          ) {
-            can(Action.Read, Project);
-          }
-        }
-      }
-
-      if (itemId) {
-        item = await this.itemService.getItem(itemId);
-        // is the user allocated to the project?
-        const itemAllocatedTo = item.allocatedTo.find(
-          (user) => user === userId,
-        );
-        // check item is in project
-        if (item.project === projectId) {
-          if (itemAllocatedTo === userId) {
-            can(Action.Manage, Item);
-          } else {
-            can(Action.Read, Item);
-          }
-        } else if (
-          item.project === ProjectMemberRole.Member ||
-          itemAllocatedTo === ProjectMemberRole.Admin
-        ) {
-          can(Action.Create, Item);
         }
       }
     } catch (error) {
