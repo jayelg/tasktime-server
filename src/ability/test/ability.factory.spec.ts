@@ -77,7 +77,7 @@ describe('AbilityFactory', () => {
         });
 
         expect(ability.can(Action.Create, Org)).toBeTruthy(); // any user can create a new org
-        expect(ability.can(Action.Create, Project)).toBeTruthy();
+        // expect(ability.can(Action.Create, Project)).toBeTruthy(); only for orgPM or orgAdmin
         expect(ability.can(Action.Manage, Org)).toBeFalsy();
         expect(ability.can(Action.Read, Org)).toBeTruthy();
       });
@@ -100,6 +100,25 @@ describe('AbilityFactory', () => {
         expect(ability.can(Action.Manage, Org)).toBeFalsy();
         expect(ability.can(Action.Read, Org)).toBeTruthy();
       });
+
+      it('should not give any abilities if user is not member of org', async () => {
+        const userId = 'userId';
+        const userRole = OrgMemberRole.Member;
+        mockOrgService.getOrg = jest.fn().mockResolvedValue({
+          members: [{ _id: 'differentUser', role: userRole }],
+        });
+
+        const ability: AppAbility = await service.defineAbility({
+          userId: userId,
+          orgId: 'orgId',
+        });
+
+        expect(ability.can(Action.Create, Org)).toBeTruthy(); // always allowed for users
+        expect(ability.can(Action.Manage, Org)).toBeFalsy(); // any user can create a new org
+        expect(ability.can(Action.Update, Org)).toBeFalsy();
+        expect(ability.can(Action.Read, Org)).toBeFalsy();
+        expect(ability.can(Action.Delete, Org)).toBeFalsy();
+      });
     });
 
     describe('Project Abilities', () => {
@@ -115,7 +134,8 @@ describe('AbilityFactory', () => {
         });
         mockProjectService.getProject = jest.fn().mockResolvedValue({
           _id: projectId,
-          members: [{ _id: userId, role: projectRole, isHidden: false }],
+          members: [{ _id: userId, role: projectRole }],
+          isHidden: false,
         });
 
         // dummy orgId is required to handle org abilities
@@ -139,7 +159,8 @@ describe('AbilityFactory', () => {
         });
         mockProjectService.getProject = jest.fn().mockResolvedValue({
           _id: projectId,
-          members: [{ _id: userId, role: projectRole, isHidden: false }],
+          members: [{ _id: userId, role: projectRole }],
+          isHidden: false,
         });
 
         // dummy orgId is required to handle org abilities
@@ -165,7 +186,8 @@ describe('AbilityFactory', () => {
         });
         mockProjectService.getProject = jest.fn().mockResolvedValue({
           _id: projectId,
-          members: [{ _id: userId, role: projectRole, isHidden: false }],
+          members: [{ _id: userId, role: projectRole }],
+          isHidden: false,
         });
 
         // dummy orgId is required to handle org abilities
@@ -180,7 +202,38 @@ describe('AbilityFactory', () => {
         expect(ability.can(Action.Read, Project)).toBeTruthy();
       });
 
-      it('should not give abilities if user is not a member of org', async () => {
+      it('should give orgMember who is not a member of project correct abilities', async () => {
+        const userId = 'userId';
+        const projectId = 'projectId';
+        const orgRole = OrgMemberRole.Member;
+        const projectRole = ProjectMemberRole.Viewer;
+        // user is member of org and project is in org
+        mockOrgService.getOrg = jest.fn().mockResolvedValue({
+          projects: [projectId],
+          members: [{ _id: userId, role: orgRole }],
+        });
+        // project has a different user as a member
+        mockProjectService.getProject = jest.fn().mockResolvedValue({
+          _id: projectId,
+          members: [{ _id: 'differentUser', role: projectRole }],
+          isHidden: false,
+        });
+
+        const ability: AppAbility = await service.defineAbility({
+          userId: userId,
+          orgId: 'orgId',
+          projectId: projectId,
+        });
+
+        expect(ability.can(Action.Read, Project)).toBeTruthy(); // project is not hidden
+        expect(ability.can(Action.Create, Project)).toBeFalsy(); // org Members can create projects ignoring projectId
+        expect(ability.can(Action.Manage, Project)).toBeFalsy();
+        expect(ability.can(Action.Update, Project)).toBeFalsy();
+        expect(ability.can(Action.Delete, Project)).toBeFalsy();
+        expect(ability.can(Action.Create, Item)).toBeFalsy();
+      });
+
+      it('should not give abilities if user is member of project but not a member of org', async () => {
         const userId = 'userId';
         const projectId = 'projectId';
         const projectRole = ProjectMemberRole.Viewer;
@@ -190,14 +243,39 @@ describe('AbilityFactory', () => {
         });
         mockProjectService.getProject = jest.fn().mockResolvedValue({
           _id: projectId,
-          members: [{ _id: userId, role: projectRole, isHidden: false }],
+          members: [{ _id: userId, role: projectRole }],
+          isHidden: false,
         });
 
         // dummy orgId is required to handle org abilities
         const ability: AppAbility = await service.defineAbility({
           userId: userId,
           orgId: 'orgId',
-          projectId: 'projectId',
+          projectId: projectId,
+        });
+
+        expect(ability.can(Action.Read, Project)).toBeFalsy();
+      });
+
+      it('should not give abilities if project is not of org', async () => {
+        const userId = 'userId';
+        const orgRole = OrgMemberRole.Member;
+        const projectId = 'projectId';
+        const projectRole = ProjectMemberRole.Viewer;
+        mockOrgService.getOrg = jest.fn().mockResolvedValue({
+          projects: ['differentProject'],
+          members: [{ _id: userId, role: orgRole }],
+        });
+        mockProjectService.getProject = jest.fn().mockResolvedValue({
+          _id: projectId,
+          members: [{ _id: userId, role: projectRole }],
+          isHidden: false,
+        });
+
+        const ability: AppAbility = await service.defineAbility({
+          userId: userId,
+          orgId: 'orgId',
+          projectId: projectId,
         });
 
         expect(ability.can(Action.Read, Project)).toBeFalsy();
@@ -208,13 +286,15 @@ describe('AbilityFactory', () => {
       it('should give item assigned members correct permissions for Item', async () => {
         const userId = 'userId';
         const projectId = 'projectId';
-        const orgRole = OrgMemberRole.Admin;
-        const projectRole = ProjectMemberRole.Admin;
+        const orgRole = OrgMemberRole.Member;
+        const projectRole = ProjectMemberRole.Member;
 
         mockOrgService.getOrg = jest.fn().mockResolvedValue({
+          projects: [projectId],
           members: [{ _id: userId, role: orgRole }],
         });
         mockProjectService.getProject = jest.fn().mockResolvedValue({
+          _id: projectId,
           members: [{ _id: userId, role: projectRole }],
           isHidden: false,
         });
