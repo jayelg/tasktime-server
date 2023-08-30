@@ -34,11 +34,11 @@ export class AbilitiesGuard implements CanActivate {
 
     const request: Request = context.switchToHttp().getRequest();
 
-    const ability = await this.caslAbilityFactory.defineAbility(
-      request.user.id,
-      request.params.orgId,
-      request.params.projectId,
-    );
+    const ability = await this.caslAbilityFactory.defineAbility({
+      userId: request.user.id,
+      orgId: request.params.orgId,
+      projectId: request.params.projectId,
+    });
 
     try {
       rules.forEach((rule) =>
