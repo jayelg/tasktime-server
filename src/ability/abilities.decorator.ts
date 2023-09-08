@@ -1,8 +1,8 @@
 import { SetMetadata } from '@nestjs/common';
 import { Action, Subjects } from './ability.factory';
-import { Org } from 'src/org/org.schema';
-import { Project } from 'src/project/project.schema';
-import { Item } from 'src/item/item.schema';
+import { Org } from 'src/org/entities/org.entity';
+import { Project } from 'src/project/entities/project.entity';
+import { Item } from 'src/item/entities/item.entity';
 
 export interface RequiredRule {
   action: Action;
