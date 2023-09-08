@@ -16,9 +16,9 @@ written in [Typescript](https://www.typescriptlang.org/)
 
 [Maizzle](https://maizzle.com) - Framework for creating HTML/CSS packages using tailwindCSS. This is configured to generate handlebars templates
 
-[Mongoose](https://mongoosejs.com/) - MongoDB
+[Mikro ORM](https://mikro-orm.io/) - Postgres
 
-[Swagger](https://mongoosejs.com/) - API Documentation
+[Swagger](https://swagger.io/) - API Documentation
 
 ## First Prototype
 
