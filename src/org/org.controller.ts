@@ -28,6 +28,7 @@ import {
   ViewOrgAbility,
 } from 'src/ability/abilities.decorator';
 import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
+import { Org } from './entities/org.entity';
 
 @Controller('org')
 @ApiTags('org')
@@ -36,7 +37,7 @@ export class OrgController {
 
   @Post()
   @CheckAbilities(new CreateOrgAbility())
-  async createOrg(@Req() req, @Body() newOrg: CreateOrgDto): Promise<IOrg> {
+  async createOrg(@Req() req, @Body() newOrg: CreateOrgDto): Promise<Org> {
     return await this.orgService.createOrg(req.user.id, newOrg);
   }
 
@@ -46,8 +47,8 @@ export class OrgController {
   @CheckAbilities(new ViewOrgAbility())
   async getOrg(
     @Req() req: UserRequestDto,
-    @Param('orgId') orgId: string,
-  ): Promise<OrgDto> {
+    @Param('orgId') orgId: number,
+  ): Promise<Org> {
     return await this.orgService.getOrg(orgId);
   }
 
@@ -57,39 +58,39 @@ export class OrgController {
   @CheckAbilities(new UpdateOrgAbility())
   async updateOrg(
     @Req() req: UserRequestDto,
-    @Param('orgId') orgId: string,
+    @Param('orgId') orgId: number,
     @Body() orgUpdates: UpdateOrgDto,
-  ): Promise<IOrg> {
+  ): Promise<Org> {
     return await this.orgService.updateOrg(orgId, orgUpdates);
   }
 
   @CheckAbilities(new DeleteOrgAbility())
   @Delete(':orgId')
-  async deleteOrg(@Req() req: UserRequestDto, @Param('orgId') orgId: string) {
+  async deleteOrg(@Req() req: UserRequestDto, @Param('orgId') orgId: number) {
     return await this.orgService.deleteOrg(orgId);
   }
 
   /*    :orgId/member    */
 
   @Post(':orgId/member/acceptInvite')
-  async acceptInvite(@Req() req, @Param('orgId') orgId: string) {
+  async acceptInvite(@Req() req, @Param('orgId') orgId: number) {
     await this.orgService.acceptInvite(req.user.id, orgId);
   }
 
   @Get(':orgId/member/:memberId')
   async getMember(
     @Req() req,
-    @Param('orgId') orgId: string,
-    @Param('memberId') memberId: string,
+    @Param('orgId') orgId: number,
+    @Param('memberId') memberId: number,
   ) {
-    return await this.orgService.getMember(orgId, memberId);
+    return await this.orgService.getMember(memberId, orgId);
   }
 
   @Delete(':orgId/member/:memberId')
   async removeMember(
     @Req() req,
-    @Param('orgId') orgId: string,
-    @Param('memberId') memberId: string,
+    @Param('orgId') orgId: number,
+    @Param('memberId') memberId: number,
   ) {
     try {
       await this.orgService.removeMember(req.user.id, orgId, memberId);

@@ -12,7 +12,6 @@ import { ProjectService } from './project.service';
 import { CreateProjectDto } from './dto/createProject.dto';
 import { UpdateProjectDto } from './dto/updateProject.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { IProject } from './interface/project.interface';
 import { SelectedProjectsDto } from './dto/selectedProjects.dto';
 import {
   CheckAbilities,
@@ -23,7 +22,7 @@ import {
   ViewProjectAbility,
 } from 'src/ability/abilities.decorator';
 import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
-import { ProjectDto } from './dto/project.dto';
+import { Project } from './entities/project.entity';
 
 @Controller('org/:orgId/project')
 @ApiTags('project')
@@ -32,10 +31,7 @@ export class ProjectController {
 
   @Get(':projectId')
   @CheckAbilities(new ViewProjectAbility())
-  async getProject(
-    @Req() req,
-    @Param('projectId') projectId: string,
-  ): Promise<ProjectDto> {
+  async getProject(@Param('projectId') projectId: number): Promise<Project> {
     return await this.projectService.getProject(projectId);
   }
 
@@ -44,13 +40,9 @@ export class ProjectController {
   @Get()
   @CheckAbilities(new ManageOrgAbility())
   async getSelectedProjects(
-    @Req() req: UserRequestDto,
     @Body('projectId') body: SelectedProjectsDto,
-  ): Promise<ProjectDto[]> {
-    return await this.projectService.getSelectedProjects(
-      req.user.id,
-      body.projectIds,
-    );
+  ): Promise<Project[]> {
+    return await this.projectService.getSelectedProjects(body.projectIds);
   }
 
   @Post()
@@ -58,8 +50,7 @@ export class ProjectController {
   async createProject(
     @Req() req: UserRequestDto,
     @Body() newProject: CreateProjectDto,
-  ): Promise<ProjectDto> {
-    // todo implement authorization
+  ): Promise<Project> {
     return await this.projectService.createProject(
       req.user.id,
       newProject.orgId,
@@ -67,21 +58,20 @@ export class ProjectController {
     );
   }
 
-  // no validated yet
   @Patch(':projectId')
   @CheckAbilities(new UpdateProjectAbility())
   async updateProject(
-    @Req() req: UserRequestDto,
-    @Param('projectId') projectId: string,
+    @Param('projectId') projectId: number,
     @Body() changes: UpdateProjectDto,
-  ): Promise<ProjectDto> {
+  ): Promise<Project> {
     return await this.projectService.updateProject(projectId, changes);
   }
+
   @CheckAbilities(new DeleteProjectAbility())
   @Delete(':projectId')
   async deleteProject(
     @Req() req: UserRequestDto,
-    @Param('projectId') projectId: string,
+    @Param('projectId') projectId: number,
   ) {
     await this.projectService.deleteProject(req.user.id, projectId);
   }
