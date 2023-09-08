@@ -7,7 +7,7 @@ export class MemberInvitedEvent extends EventEmitter2 {
     public readonly orgId: string,
     public readonly orgName: string,
     public readonly invitedAt: string,
-    public readonly invitedByUserId: string,
+    public readonly invitedByUserId: number,
     public readonly invitedByName: string,
   ) {
     super();

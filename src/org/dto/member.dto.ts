@@ -6,14 +6,14 @@ import {
   IsUrl,
   IsEmail,
   IsBoolean,
+  IsNumber,
 } from 'class-validator';
-import { IMember } from '../interface/member.interface';
 import { OrgMemberRole } from '../enum/orgMemberRole.enum';
 
-export class MemberDto implements IMember {
-  @IsString()
+export class MemberDto {
+  @IsNumber()
   @IsNotEmpty()
-  _id: string;
+  id: number;
 
   @IsIn([...Object.values(OrgMemberRole)])
   role: string;

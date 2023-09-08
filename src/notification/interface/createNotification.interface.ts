@@ -1,5 +1,5 @@
 export interface ICreateNotification {
-  user: string;
+  user: number;
   title: string;
   body: string;
   button: string;

@@ -1,22 +1,11 @@
-import { Type } from 'class-transformer';
-import {
-  IsString,
-  IsNotEmpty,
-  IsIn,
-  IsArray,
-  ValidateNested,
-  IsOptional,
-  IsNumber,
-  IsBoolean,
-  IsDivisibleBy,
-} from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
 
 export class CreateProjectDto {
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
-  orgId: string;
+  orgId: number;
 }

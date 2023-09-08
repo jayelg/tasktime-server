@@ -1,17 +1,12 @@
-import { IProjectMember } from './projectMember.interface';
-
 export interface IProject {
-  _id: string;
-  org: string;
+  id: number;
+  org: number;
   name: string;
-  creator: string;
+  creator: number;
   createdAt: string;
   updatedAt: string;
   description: string;
-  members: IProjectMember[];
   timeAllocated?: number;
   isComplete: boolean;
   isHidden: boolean;
-  events: string[];
-  items: string[];
 }

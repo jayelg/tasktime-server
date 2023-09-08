@@ -1,8 +1,7 @@
-import { IsNotEmpty, IsArray } from 'class-validator';
-import { ISelectedProjects } from '../interface/selectedProjects.interface';
+import { IsNotEmpty, IsNumber } from 'class-validator';
 
-export class SelectedProjectsDto implements ISelectedProjects {
-  @IsArray()
+export class SelectedProjectsDto {
+  @IsNumber()
   @IsNotEmpty()
-  projectIds: string[];
+  projectIds: number[];
 }
