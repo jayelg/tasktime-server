@@ -1,14 +1,10 @@
-import { Body, Controller, Get, Param, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, Req } from '@nestjs/common';
 import { UserService } from './user.service';
-import { UpdateUserRequestDto } from './dto/updateUserRequest.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { InviteToOrgDto } from './dto/inviteToOrg.dto';
-import {
-  CheckAbilities,
-  ManageOrgAbility,
-} from 'src/ability/abilities.decorator';
+import { UpdateUserDto } from './dto/updateUser.dto';
+import { ApiTags } from '@nestjs/swagger';
 import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
-import { UserDto } from './dto/user.dto';
+import { getUserByEmailReq } from './dto/getUserByEmailReq.dto';
+import { User } from './entities/user.entity';
 
 // This endpoint is used for own user profile
 // Other users can be accessed through the 'org/:orgId/members/' endpoint
@@ -18,15 +14,22 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  async getProfile(@Req() req: UserRequestDto): Promise<UserDto> {
+  async getProfile(@Req() req: UserRequestDto): Promise<User> {
+    console.log(req.user.id);
     return await this.userService.getUser(req.user.id);
+  }
+
+  // temp for testing
+  @Get('byemail')
+  async getUserByEmail(@Body() body: getUserByEmailReq): Promise<User> {
+    return await this.userService.getUserByEmail(body.email);
   }
 
   @Patch()
   async updateUser(
     @Req() req: UserRequestDto,
-    @Body() updates: UpdateUserRequestDto,
-  ): Promise<UserDto> {
+    @Body() updates: UpdateUserDto,
+  ): Promise<User> {
     return await this.userService.updateUser(req.user.id, updates);
   }
 
@@ -40,30 +43,5 @@ export class UserController {
   async enableUser(@Req() req) {
     // send confirmation email
     await this.userService.updateUser(req.user.id, { disabled: false });
-  }
-
-  @Patch('readNotification/:notificationId')
-  async markNotificationRead(
-    @Req() req,
-    @Param('notificationId') notificationId: string,
-  ) {
-    await this.userService.removeUnreadNotification(
-      req.user.id,
-      notificationId,
-    );
-  }
-
-  @Post('inviteTo/:orgId')
-  @CheckAbilities(new ManageOrgAbility())
-  async inviteUserToOrg(
-    @Req() req,
-    @Param('orgId') orgId: string,
-    @Body() inviteData: InviteToOrgDto,
-  ) {
-    await this.userService.handleInvitedOrgMember(
-      req.user.id,
-      orgId,
-      inviteData,
-    );
   }
 }
