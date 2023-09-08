@@ -1,190 +1,90 @@
-import {
-  Injectable,
-  NotFoundException,
-  InternalServerErrorException,
-} from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { Org, OrgDocument } from './org.schema';
-import { IOrg, IOrgServiceUpdates } from './interface/org.interface';
-import { IMember } from './interface/member.interface';
+import { Injectable } from '@nestjs/common';
+import { IOrgServiceUpdates } from './interface/org.interface';
 import { CreateOrgDto } from './dto/createOrg.dto';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrgCreatedEvent } from './event/orgCreated.event';
-import { ProjectCreatedEvent } from 'src/project/event/projectCreated.event';
-import { MemberInvitedEvent } from './event/memberInvited.event';
-import { UserInvitedToOrgEvent } from 'src/user/event/userInvitedToOrg.event';
-import { OrgDto } from './dto/org.dto';
 import { OrgInviteAcceptedEvent } from './event/orgInviteAccepted.event';
-import { UserDto } from 'src/user/dto/user.dto';
-import { MemberDto } from './dto/member.dto';
-import { GetUserEvent } from 'src/user/event/getUser.event';
-import { OrgGetMemberEvent } from './event/orgGetMember.event';
-import { OrgMemberRemovedEvent } from './event/memberRemoved.event';
+import { EntityManager } from '@mikro-orm/postgresql';
+import { OrgRepository } from './repositories/org.repository';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { Org } from './entities/org.entity';
+import { OrgMember } from './entities/orgMember.entity';
+import { User } from 'src/user/entities/user.entity';
+import { Reference } from '@mikro-orm/core';
 
 @Injectable()
 export class OrgService {
   constructor(
-    @InjectModel('Org') private readonly orgs: Model<Org>,
+    private readonly em: EntityManager,
+    @InjectRepository(Org)
+    private readonly orgRepository: OrgRepository,
     private eventEmitter: EventEmitter2,
   ) {}
 
-  private async getOrgAndAuthorizeUser(
-    userId: string,
-    orgId: string,
-    requiredLevel: string,
-  ): Promise<{ orgDoc: OrgDocument; member: IMember }> {
+  async getOrgs(userId: string, orgIds: number[]): Promise<Org[]> {
     try {
-      const orgDoc = await this.orgs.findById(orgId);
-      if (!orgDoc) {
-        throw new NotFoundException('org not found');
-      }
-      const member = await this.getOrgMember(userId, new OrgDto(orgDoc));
-      // the order defines the heirachy eg. admin has all user privilages
-      const permissionLevels = [
-        'orgViewer',
-        'orgUser',
-        'orgProjectManager',
-        'orgAdmin',
-      ];
-      const requiredIndex = permissionLevels.indexOf(requiredLevel);
-      const userIndex = permissionLevels.indexOf(member.role);
-      if (!member || userIndex === -1 || userIndex < requiredIndex) {
-        throw new NotFoundException(`You don't have permission.`);
-      } else {
-        return { orgDoc: orgDoc, member: member };
-      }
+      return await this.orgRepository.find({ id: { $in: orgIds } });
     } catch (error) {
       throw error;
     }
   }
 
-  private reduceMember(fullUser: UserDto, role: string): MemberDto {
-    return {
-      _id: fullUser._id,
-      role: role,
-      email: fullUser.email,
-      firstName: fullUser.firstName,
-      lastName: fullUser.lastName,
-      avatar: fullUser.avatar,
-      disabled: fullUser.disabled,
-    };
-  }
-
-  // public interface for the above method
-  // remove after abilities guard implemented
-  async authorizeUserForOrg(memberId: string, orgId: string, role: string) {
-    await this.getOrgAndAuthorizeUser(memberId, orgId, role);
-  }
-
-  private getOrgMember(userId: string, org: OrgDto) {
-    const member = org.members.find((member) => member._id === userId);
-    if (member) {
-      return member;
-    } else {
-      return null;
-    }
-  }
-
-  async getOrgs(userId: string, orgIds: string[]): Promise<OrgDto[]> {
-    const orgDocs = await this.orgs.find({
-      _id: { $in: orgIds },
-      members: { $elemMatch: { _id: userId } },
-    });
-    const orgs = orgDocs.map((org) => new OrgDto(org));
-    return orgs;
-  }
-
-  async getOrg(orgId: string): Promise<OrgDto> {
+  async getOrg(orgId: number): Promise<Org> {
     try {
-      return new OrgDto(await this.orgs.findById(orgId));
+      return await this.orgRepository.findOne(orgId);
     } catch (error) {
       throw error;
     }
   }
 
-  async createOrg(userId: string, newOrg: CreateOrgDto): Promise<OrgDto> {
+  async createOrg(userId: number, newOrg: CreateOrgDto): Promise<Org> {
     try {
-      const formattedOrg = new this.orgs({
-        name: newOrg.name,
-        members: [{ _id: new Types.ObjectId(userId), role: 'orgAdmin' }],
-        createdAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-        updatedAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-      });
-      const org = new OrgDto(await formattedOrg.save());
+      const org = new Org(newOrg.name);
+      await this.em.persistAndFlush(org);
+      const userRef = Reference.createFromPK(User, userId);
+      const orgRef = Reference.createFromPK(Org, org.id);
+      const orgMember = new OrgMember(userRef, orgRef);
+      await this.em.persistAndFlush(orgMember);
       this.eventEmitter.emit(
         'org.created',
-        new OrgCreatedEvent(org._id, org.name, org.createdAt, userId),
+        new OrgCreatedEvent(org.id, org.name, org.createdAt, userId),
       );
       return org;
     } catch (error) {
-      // todo: log error
       throw error;
     }
   }
 
-  async updateOrg(
-    orgId: string,
-    orgUpdates: IOrgServiceUpdates,
-  ): Promise<OrgDto> {
+  async updateOrg(orgId: number, orgUpdates: IOrgServiceUpdates): Promise<Org> {
     try {
-      const orgDoc = await this.orgs.findById(orgId);
-      Object.assign(orgDoc, orgUpdates);
-      return new OrgDto(await orgDoc.save());
-    } catch (error) {
-      // todo: log error
-      throw error;
-    }
-  }
-
-  async deleteOrg(orgId: string) {
-    try {
-      await this.orgs.findByIdAndDelete(orgId);
+      const org = await this.orgRepository.findOne(orgId);
+      this.orgRepository.assign(org, orgUpdates);
+      this.em.persistAndFlush(org);
+      return org;
     } catch (error) {
       throw error;
     }
   }
 
-  async removeMember(userId: string, orgId: string, memberId: string) {
+  async deleteOrg(orgId: number) {
     try {
-      const orgDoc = await this.orgs.findById(orgId);
-      if (!orgDoc) {
-        throw new NotFoundException('org not found');
+      const org = await this.orgRepository.findOne(orgId);
+      if (!org) {
+        throw new Error(`Project with ID ${orgId} not found`);
       }
-      const memberIndex = orgDoc.members.findIndex(
-        (m) => m._id.toString() === memberId,
-      );
-      if (memberIndex !== -1) {
-        orgDoc.members.splice(memberIndex, 1);
-        const org = new OrgDto(await orgDoc.save());
-        this.eventEmitter.emit(
-          'org.removedMember',
-          new OrgMemberRemovedEvent(
-            org._id,
-            org.name,
-            memberId,
-            new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-            userId,
-          ),
-        );
-      } else {
-        throw new NotFoundException('Member not found in the organization.');
-      }
+      await this.em.removeAndFlush(org);
     } catch (error) {
       throw error;
     }
   }
 
-  // auth either orgAdmin or projectAdmin
-  async removeProject(orgId: string, projectId: string) {
+  async removeMember(userId: number, orgId: number, memberId: number) {
     try {
-      await this.orgs
-        .findByIdAndUpdate(
-          orgId,
-          { $pull: { projects: projectId } },
-          { new: true },
-        )
-        .exec();
+      const orgMember = await this.orgRepository.findOrgMember(memberId, orgId);
+      if (!orgMember) {
+        throw new Error(`User with ID ${memberId} not found`);
+      }
+      await this.em.removeAndFlush(orgMember);
     } catch (error) {
       throw error;
     }
@@ -192,88 +92,14 @@ export class OrgService {
 
   // Emit event to be accepted by userService
   // userService should then add org to user
-  async acceptInvite(userId: string, orgId: string) {
+  async acceptInvite(userId: number, orgId: number) {
     this.eventEmitter.emit(
       'org.inviteAccepted',
       new OrgInviteAcceptedEvent(userId, orgId),
     );
   }
 
-  async getMember(userId: string, orgId: string) {
-    this.eventEmitter.emit('org.getMember', new OrgGetMemberEvent(userId));
-    const [getUserEvent] = await this.eventEmitter.waitFor('user.getUser', {
-      handleError: false,
-      timeout: 0,
-      filter: (event: GetUserEvent) => event.user._id === userId,
-      Promise: Promise,
-      overload: false,
-    });
-    const org = await this.orgs.findById(orgId);
-    const member = org.members.find((member) => member._id.equals(userId));
-    return this.reduceMember(getUserEvent.user, member.role);
-  }
-
-  // Event Listeners
-  // move to listeners folder?
-
-  @OnEvent('project.created', { async: true })
-  async projectCreated(payload: ProjectCreatedEvent) {
-    try {
-      await this.orgs.findByIdAndUpdate(
-        payload.orgId,
-        { $push: { projects: payload.projectId } },
-        { new: true },
-      );
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'There was an error adding project to org',
-      );
-    }
-  }
-
-  @OnEvent('project.deleted', { async: true })
-  async projectDeleted(payload: ProjectCreatedEvent) {
-    try {
-      await this.orgs.findByIdAndUpdate(
-        payload.orgId,
-        { $pull: { projects: payload.projectId } },
-        { new: true },
-      );
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'There was an error removing project to org',
-      );
-    }
-  }
-
-  @OnEvent('user.invitedToOrg', { async: true })
-  async inviteMember(payload: UserInvitedToOrgEvent) {
-    try {
-      // Auth should happen before user is created
-      const { orgDoc } = await this.getOrgAndAuthorizeUser(
-        payload.invitedByUserId,
-        payload.orgId,
-        'orgAdmin',
-      );
-      orgDoc.members.push({
-        _id: new Types.ObjectId(payload.inviteeUserId),
-        role: payload.role,
-      });
-      const org = new OrgDto(await orgDoc.save());
-      this.eventEmitter.emit(
-        'org.memberInvited',
-        new MemberInvitedEvent(
-          payload.inviteeEmail,
-          payload.role,
-          org._id,
-          org.name,
-          new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-          payload.invitedByUserId,
-          payload.invitedByName,
-        ),
-      );
-    } catch (error) {
-      throw error;
-    }
+  async getMember(userId: number, orgId: number) {
+    return await this.orgRepository.findOrgMember(userId, orgId);
   }
 }
