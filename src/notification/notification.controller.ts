@@ -1,8 +1,8 @@
 import { Controller, Delete, Get, Param, Req } from '@nestjs/common';
 import { NotificationService } from './notification.service';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
-import { NotificationDto } from './dto/notification.dto';
+import { Notification } from './entities/notification.entity';
 
 @Controller('notification')
 @ApiTags('notification')
@@ -12,19 +12,18 @@ export class NotificationController {
   @Get(':notificationId')
   async getNotification(
     @Req() req: UserRequestDto,
-    @Param('notificationId') notificationId: string,
-  ): Promise<NotificationDto> {
-    const note = await this.notificationService.getNotification(
+    @Param('notificationId') notificationId: number,
+  ): Promise<Notification> {
+    return await this.notificationService.getNotification(
       req.user.id,
       notificationId,
     );
-    return note;
   }
 
   @Delete(':notificationId')
   async deleteNotification(
     @Req() req: UserRequestDto,
-    @Param('notificationId') notificationId: string,
+    @Param('notificationId') notificationId: number,
   ) {
     await this.notificationService.deleteNotification(
       req.user.id,
