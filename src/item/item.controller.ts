@@ -11,7 +11,7 @@ import {
 import { ItemService } from './item.service';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { NewItemDto } from './dto/newItem.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import {
   CheckAbilities,
   CreateItemAbility,
@@ -19,8 +19,8 @@ import {
   UpdateItemAbility,
   ViewProjectAbility,
 } from 'src/ability/abilities.decorator';
-import { IItem } from './interface/item.interface';
 import { UpdateItemDto } from './dto/updateItem.dto';
+import { Item } from './entities/item.entity';
 
 @Controller('org/:orgId/projects/:projectId/items')
 @ApiTags('items')
@@ -29,13 +29,13 @@ export class ItemController {
 
   @Get()
   @CheckAbilities(new ViewProjectAbility())
-  async getItems(@Body() itemIds: string[]) {
+  async getItems(@Body() itemIds: number[]) {
     return this.itemService.getItems(itemIds);
   }
 
   @Get(':itemId')
   @CheckAbilities(new ViewProjectAbility())
-  async getItem(@Param('itemId') itemId: string): Promise<IItem> {
+  async getItem(@Param('itemId') itemId: number): Promise<Item> {
     return this.itemService.getItem(itemId);
   }
 
@@ -43,42 +43,16 @@ export class ItemController {
   @CheckAbilities(new CreateItemAbility())
   async createItem(
     @Req() req,
-    @Param('projectId') projectId: string,
+    @Param('projectId') projectId: number,
     @Body() newItem: NewItemDto,
   ) {
-    const createdItem = await this.itemService.createItem(
-      req.user._id,
-      projectId,
-      newItem,
-    );
-
-    // move to service
-    // update parent nested item relationships
-    if (createdItem.parentItemId.toString() !== projectId) {
-      const parentItem = await this.itemService.getItem(newItem.parentItemId);
-      const updatedNestedItemIds = {
-        nestedItemIds: [
-          ...parentItem.nestedItemIds,
-          createdItem._id.toString(),
-        ],
-      };
-      await this.itemService.updateItem(
-        newItem.parentItemId,
-        updatedNestedItemIds,
-      );
-    }
-    // update predecessor item relationships
-    if (newItem.predecessorItemId) {
-      const changes = { successorItemId: createdItem._id.toString() };
-      await this.itemService.updateItem(newItem.predecessorItemId, changes);
-    }
-    return createdItem;
+    return await this.itemService.createItem(req.user._id, projectId, newItem);
   }
 
   @Patch(':itemId')
   @CheckAbilities(new UpdateItemAbility())
   async updateItem(
-    @Param('itemId') itemId: string,
+    @Param('itemId') itemId: number,
     @Body() changes: UpdateItemDto,
   ) {
     return await this.itemService.updateItem(itemId, changes);
@@ -86,7 +60,7 @@ export class ItemController {
 
   @Delete(':itemId')
   @CheckAbilities(new DeleteItemAbility())
-  async deleteItem(@Param('itemId') itemId: string) {
+  async deleteItem(@Param('itemId') itemId: number) {
     return await this.itemService.deleteItem(itemId);
   }
 }
