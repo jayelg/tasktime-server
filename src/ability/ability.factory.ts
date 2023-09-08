@@ -5,14 +5,14 @@ import {
   MongoAbility,
   createMongoAbility,
 } from '@casl/ability';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { OrgMemberRole } from 'src/org/enum/orgMemberRole.enum';
 import { ProjectMemberRole } from 'src/project/enum/projectMemberRole.enum';
 import { OrgService } from 'src/org/org.service';
 import { ProjectService } from 'src/project/project.service';
-import { Project } from 'src/project/project.schema';
-import { Org } from 'src/org/org.schema';
-import { Item } from 'src/item/item.schema';
+import { Project } from 'src/project/entities/project.entity';
+import { Org } from 'src/org/entities/org.entity';
+import { Item } from 'src/item/entities/item.entity';
 import { ItemService } from 'src/item/item.service';
 import { defineAbilityDto } from './dto/defineAbility.dto';
 
@@ -54,9 +54,9 @@ export class AbilityFactory {
     try {
       if (orgId) {
         org = await this.orgService.getOrg(orgId);
-        const orgMember = org.members.find((member) => member._id === userId);
+        const orgMember = await this.orgService.getMember(userId, orgId); // org.members.find((member) => member._id === userId);
         if (orgMember) {
-          if (orgMember.role === OrgMemberRole.Admin) {
+          if (orgMember.role.toString() === OrgMemberRole.Admin) {
             can(Action.Read, Project); // can see all project including hidden
             can(Action.Manage, Org);
           }
