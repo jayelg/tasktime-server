@@ -3,21 +3,8 @@ import {
   IsNotEmpty,
   IsUrl,
   IsOptional,
-  IsArray,
   IsBoolean,
 } from 'class-validator';
-
-export class ArrayModification {
-  @IsOptional()
-  @IsArray()
-  @IsNotEmpty()
-  add?: any[] = [];
-
-  @IsOptional()
-  @IsArray()
-  @IsNotEmpty()
-  remove?: any[] = [];
-}
 
 export class UpdateUserDto {
   @IsOptional()
@@ -34,22 +21,6 @@ export class UpdateUserDto {
   @IsUrl()
   @IsNotEmpty()
   avatar?: string;
-
-  @IsOptional()
-  @IsNotEmpty()
-  orgs?: ArrayModification;
-
-  @IsOptional()
-  @IsNotEmpty()
-  personalProjects?: ArrayModification;
-
-  @IsOptional()
-  @IsNotEmpty()
-  unreadNotifications?: ArrayModification;
-
-  @IsOptional()
-  @IsNotEmpty()
-  unreadMessages?: ArrayModification;
 
   @IsOptional()
   @IsBoolean()
