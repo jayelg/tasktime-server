@@ -1,6 +1,6 @@
 export interface IdefineAbility {
-  userId: string;
-  orgId?: string;
-  projectId?: string;
-  itemId?: string;
+  userId: number;
+  orgId?: number;
+  projectId?: number;
+  itemId?: number;
 }

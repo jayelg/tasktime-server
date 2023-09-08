@@ -1,12 +1,12 @@
 declare module 'express' {
   export interface Request {
     user: {
-      id: string;
+      id: number;
       email: string;
     };
     params: {
-      orgId: string;
-      projectId: string;
+      orgId: number;
+      projectId: number;
     };
   }
 }
