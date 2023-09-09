@@ -38,6 +38,7 @@ export class AbilitiesGuard implements CanActivate {
       userId: request.user.id,
       orgId: request.params.orgId,
       projectId: request.params.projectId,
+      itemId: request.params.itemId,
     });
 
     try {
