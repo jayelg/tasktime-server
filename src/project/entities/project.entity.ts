@@ -8,7 +8,7 @@ import {
 import { Org } from '../../org/entities/org.entity';
 import { User } from '../../user/entities/user.entity';
 import { ProjectRepository } from '../repositories/project.repository';
-import { CustomBaseEntity } from 'src/shared/entities/customBase.entity';
+import { CustomBaseEntity } from '../../shared/entities/customBase.entity';
 
 @Entity({ customRepository: () => ProjectRepository })
 export class Project extends CustomBaseEntity {
@@ -24,15 +24,15 @@ export class Project extends CustomBaseEntity {
   creator: Reference<User>;
 
   @Property()
-  description: string;
+  description = '';
 
   @Property()
   timeAllocated = 0;
 
-  @Property()
+  @Property({ type: 'boolean' })
   isComplete = false;
 
-  @Property()
+  @Property({ type: 'boolean' })
   isHidden = false;
 
   constructor(user: Reference<User>, org: Reference<Org>, name: string) {
