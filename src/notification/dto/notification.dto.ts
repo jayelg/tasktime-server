@@ -3,11 +3,11 @@ import { IsBoolean, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 export class NotificationDto {
   @IsNumber()
   @IsNotEmpty()
-  id: number;
+  id: string;
 
   @IsNumber()
   @IsNotEmpty()
-  user: number;
+  user: string;
 
   @IsString()
   @IsNotEmpty()
@@ -27,10 +27,6 @@ export class NotificationDto {
 
   @IsNotEmpty()
   data: any[];
-
-  @IsString()
-  @IsNotEmpty()
-  button: string;
 
   constructor(data: NotificationDto) {
     this.id = data.id;
