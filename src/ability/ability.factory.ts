@@ -15,6 +15,7 @@ import { Org } from 'src/org/entities/org.entity';
 import { Item } from 'src/item/entities/item.entity';
 import { ItemService } from 'src/item/item.service';
 import { defineAbilityDto } from './dto/defineAbility.dto';
+import { ItemMemberRole } from 'src/item/enum/itemMemberRole.enum';
 
 export enum Action {
   Manage = 'manage',
@@ -22,6 +23,7 @@ export enum Action {
   Read = 'read',
   Update = 'update',
   Delete = 'delete',
+  Review = 'review',
 }
 
 export type Subjects =
@@ -53,10 +55,9 @@ export class AbilityFactory {
 
     try {
       if (orgId) {
-        org = await this.orgService.getOrg(orgId);
-        const orgMember = await this.orgService.getMember(userId, orgId); // org.members.find((member) => member._id === userId);
+        const orgMember = await this.orgService.getMember(userId, orgId);
         if (orgMember) {
-          if (orgMember.role.toString() === OrgMemberRole.Admin) {
+          if (orgMember.role === OrgMemberRole.Admin) {
             can(Action.Read, Project); // can see all project including hidden
             can(Action.Manage, Org);
           }
@@ -75,18 +76,19 @@ export class AbilityFactory {
           }
           if (projectId) {
             project = await this.projectService.getProject(projectId);
-            if (org.projects.includes(project._id)) {
+            // check project is in org
+            if (project || project.org === orgId) {
               if (!project.isHidden) {
                 can(Action.Read, Project);
               }
-              const projectMember = project.members.find(
-                (member) => member._id === userId,
+              const projectMember = await this.projectService.getMember(
+                userId,
+                projectId,
               );
               if (projectMember) {
-                if (projectMember)
-                  if (projectMember.role === ProjectMemberRole.Admin) {
-                    can(Action.Manage, Project);
-                  }
+                if (projectMember.role === ProjectMemberRole.Admin) {
+                  can(Action.Manage, Project);
+                }
                 if (
                   projectMember.role === ProjectMemberRole.Member ||
                   projectMember.role === ProjectMemberRole.Admin
@@ -96,25 +98,30 @@ export class AbilityFactory {
                 if (projectMember.role === ProjectMemberRole.Viewer) {
                   can(Action.Read, Project);
                 }
-              }
-              if (itemId) {
-                item = await this.itemService.getItem(itemId);
-                // is the user allocated to the project?
-                const itemAllocatedTo = item.allocatedTo.find(
-                  (user) => user === userId,
-                );
-                // check item is in project
-                if (item.project === projectId) {
-                  if (itemAllocatedTo === userId) {
-                    can(Action.Manage, Item);
-                  } else {
-                    can(Action.Read, Item);
+                if (itemId) {
+                  item = await this.itemService.getItem(itemId);
+                  // check item is in project
+                  if (item || item.project === projectId) {
+                    const itemMember = await this.itemService.getMember(
+                      userId,
+                      itemId,
+                    );
+                    if (itemMember) {
+                      if (itemMember.role === ItemMemberRole.Owner) {
+                        can(Action.Manage, Item);
+                        can(Action.Update, Item);
+                      }
+                      if (itemMember.role === ItemMemberRole.Member) {
+                        can(Action.Update, Item);
+                      }
+                      if (itemMember.role === ItemMemberRole.Reviewer) {
+                        can(Action.Review, Item);
+                      }
+                      if (itemMember.role === ItemMemberRole.Viewer) {
+                        can(Action.Read, Item);
+                      }
+                    }
                   }
-                } else if (
-                  item.project === ProjectMemberRole.Member ||
-                  itemAllocatedTo === ProjectMemberRole.Admin
-                ) {
-                  can(Action.Create, Item);
                 }
               }
             }
