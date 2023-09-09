@@ -1,7 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { NewItemDto } from './dto/newItem.dto';
-import { IItem } from './interface/item.interface';
-import { ItemDto } from './dto/item.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ItemCreatedEvent } from './event/itemCreated.event';
 import { ItemDeletedEvent } from './event/itemDeleted.event';
@@ -12,6 +10,8 @@ import { ItemRepository } from './repositories/item.repository';
 import { Reference } from '@mikro-orm/core';
 import { User } from 'src/user/entities/user.entity';
 import { Project } from 'src/project/entities/project.entity';
+import { ItemMember } from './entities/itemMember.entity';
+import { ItemMemberRole } from './enum/itemMemberRole.enum';
 
 @Injectable()
 export class ItemService {
@@ -22,45 +22,29 @@ export class ItemService {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  // private itemDocToIitem(itemDoc: ItemDocument): IItem {
-  //   const item: IItem = {
-  //     ...itemDoc.toJSON(),
-  //     // convert all objectId types to strings
-  //     _id: itemDoc._id.toString(),
-  //     project: itemDoc.project.toString(),
-  //     allocatedTo: itemDoc.allocatedTo.map((user) => user.toString()),
-  //     reviewers: itemDoc.reviewers.map((reviewer) => reviewer.toString()),
-  //     nestedItemIds: itemDoc.nestedItemIds.map((nestedItemId) =>
-  //       nestedItemId.toString(),
-  //     ),
-  //     parentItemId: itemDoc.parentItemId.toString(),
-  //     predecessorItemId: itemDoc.parentItemId.toString(),
-  //     successorItemId: itemDoc.parentItemId.toString(),
-  //     itemObjects: itemDoc.itemObjects.map((itemObject) =>
-  //       itemObject.toString(),
-  //     ),
-  //   };
-  //   return item;
-  // }
-
-  async getItems(itemIds: number[]): Promise<Item[]> {
+  async getItems(itemIds: string[]): Promise<Item[]> {
     const qb = this.itemRepository.createQueryBuilder();
     qb.where({ id: { $in: itemIds } });
     return await qb.getResult();
   }
 
   // todo add check user and role authorization
-  async getItem(itemId: number): Promise<Item> {
-    return this.itemRepository.findOne(itemId);
+  async getItem(itemId: string): Promise<Item> {
+    try {
+      return this.itemRepository.findOneOrFail(itemId);
+    } catch (error) {
+      throw new NotFoundException('item not found');
+    }
   }
 
-  async createItem(userId: number, projectId: number, newItem: NewItemDto) {
-    const item = new Item();
-    item.creator = Reference.createFromPK(User, userId);
-    item.project = Reference.createFromPK(Project, projectId);
-    item.name = newItem.name;
-    item.colour = newItem.colour;
+  async createItem(userId: string, projectId: string, newItem: NewItemDto) {
+    const userRef = Reference.createFromPK(User, userId);
+    const projectRef = Reference.createFromPK(Project, projectId);
+    const item = new Item(userRef, projectRef, newItem.name);
     await this.em.persistAndFlush(item);
+    const itemRef = Reference.createFromPK(Item, item.id);
+    const itemMember = new ItemMember(userRef, itemRef, ItemMemberRole.Owner);
+    await this.em.persistAndFlush(itemMember);
     this.eventEmitter.emit(
       'item.created',
       new ItemCreatedEvent(item.id, projectId, item.createdAt, userId),
@@ -68,7 +52,7 @@ export class ItemService {
     return item;
   }
 
-  async updateItem(itemId: number, updates: object) {
+  async updateItem(itemId: string, updates: object) {
     try {
       const item = await this.itemRepository.findOne(itemId);
       this.itemRepository.assign(item, updates);
@@ -79,20 +63,31 @@ export class ItemService {
     }
   }
 
-  async deleteItem(itemId: number) {
-    const item = await this.itemRepository.findOne(itemId);
-    if (!item) {
-      throw new Error(`Project with ID ${itemId} not found`);
+  async deleteItem(itemId: string) {
+    try {
+      const itemMembers = await this.itemRepository.findMembersByItemId(itemId);
+      await this.em.removeAndFlush(itemMembers);
+      const item = await this.itemRepository.findOne(itemId);
+      if (!item) {
+        throw new Error(`Item with ID ${itemId} not found`);
+      }
+      await this.em.removeAndFlush(item);
+
+      // this.eventEmitter.emit(
+      //   'item.deleted',
+      //   new ItemDeletedEvent(
+      //     itemId,
+      //     item.project.toJSON().id,
+      //     new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
+      //     item.creator.toJSON().id,
+      //   ),
+      // );
+    } catch (error) {
+      throw error;
     }
-    await this.em.removeAndFlush(item);
-    this.eventEmitter.emit(
-      'item.deleted',
-      new ItemDeletedEvent(
-        itemId,
-        item.project.unwrap().id,
-        new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-        item.creator.unwrap().id,
-      ),
-    );
+  }
+
+  async getMember(userId: string, itemId: string) {
+    return await this.itemRepository.findItemMember(userId, itemId);
   }
 }
