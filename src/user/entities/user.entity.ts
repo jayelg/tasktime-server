@@ -1,6 +1,6 @@
 import { Entity, EntityRepositoryType, Property } from '@mikro-orm/core';
 import { UserRepository } from '../repositories/user.repository';
-import { CustomBaseEntity } from 'src/shared/entities/customBase.entity';
+import { CustomBaseEntity } from '../../shared/entities/customBase.entity';
 
 @Entity({ customRepository: () => UserRepository })
 export class User extends CustomBaseEntity {
@@ -22,7 +22,7 @@ export class User extends CustomBaseEntity {
   @Property()
   lastLoginAt = '';
 
-  @Property()
+  @Property({ type: 'boolean' })
   disabled = false;
 
   constructor(email: string) {
