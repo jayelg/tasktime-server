@@ -35,9 +35,6 @@ export class MagicLoginStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  // optional invite object
-  // type is of 'org' or 'project'
-  // (project auto adds user to org)
   validate(payload: { destination: string }) {
     const user = this.authService.validateUser(payload.destination);
     return user;
