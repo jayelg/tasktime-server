@@ -8,27 +8,20 @@ import {
   Body,
   Req,
 } from '@nestjs/common';
-
-//Services
 import { OrgService } from './org.service';
-
-// DTO
 import { CreateOrgDto } from './dto/createOrg.dto';
 import { UpdateOrgDto } from './dto/updateOrg.dto';
-// Interface
-import { IOrg } from './interface/org.interface';
-
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrgDto } from './dto/org.dto';
-import {
-  CheckAbilities,
-  CreateOrgAbility,
-  DeleteOrgAbility,
-  UpdateOrgAbility,
-  ViewOrgAbility,
-} from 'src/ability/abilities.decorator';
+import { CheckAbilities } from 'src/ability/abilities.decorator';
 import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
 import { Org } from './entities/org.entity';
+import {
+  CreateOrgAbility,
+  ViewOrgAbility,
+  UpdateOrgAbility,
+  DeleteOrgAbility,
+} from 'src/ability/ability.objects';
 
 @Controller('org')
 @ApiTags('org')
@@ -47,7 +40,7 @@ export class OrgController {
   @CheckAbilities(new ViewOrgAbility())
   async getOrg(
     @Req() req: UserRequestDto,
-    @Param('orgId') orgId: number,
+    @Param('orgId') orgId: string,
   ): Promise<Org> {
     return await this.orgService.getOrg(orgId);
   }
@@ -58,7 +51,7 @@ export class OrgController {
   @CheckAbilities(new UpdateOrgAbility())
   async updateOrg(
     @Req() req: UserRequestDto,
-    @Param('orgId') orgId: number,
+    @Param('orgId') orgId: string,
     @Body() orgUpdates: UpdateOrgDto,
   ): Promise<Org> {
     return await this.orgService.updateOrg(orgId, orgUpdates);
@@ -66,22 +59,22 @@ export class OrgController {
 
   @CheckAbilities(new DeleteOrgAbility())
   @Delete(':orgId')
-  async deleteOrg(@Req() req: UserRequestDto, @Param('orgId') orgId: number) {
+  async deleteOrg(@Req() req: UserRequestDto, @Param('orgId') orgId: string) {
     return await this.orgService.deleteOrg(orgId);
   }
 
   /*    :orgId/member    */
 
   @Post(':orgId/member/acceptInvite')
-  async acceptInvite(@Req() req, @Param('orgId') orgId: number) {
+  async acceptInvite(@Req() req, @Param('orgId') orgId: string) {
     await this.orgService.acceptInvite(req.user.id, orgId);
   }
 
   @Get(':orgId/member/:memberId')
   async getMember(
     @Req() req,
-    @Param('orgId') orgId: number,
-    @Param('memberId') memberId: number,
+    @Param('orgId') orgId: string,
+    @Param('memberId') memberId: string,
   ) {
     return await this.orgService.getMember(memberId, orgId);
   }
@@ -89,8 +82,8 @@ export class OrgController {
   @Delete(':orgId/member/:memberId')
   async removeMember(
     @Req() req,
-    @Param('orgId') orgId: number,
-    @Param('memberId') memberId: number,
+    @Param('orgId') orgId: string,
+    @Param('memberId') memberId: string,
   ) {
     try {
       await this.orgService.removeMember(req.user.id, orgId, memberId);
