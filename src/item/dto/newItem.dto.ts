@@ -9,10 +9,6 @@ import {
 export class NewItemDto {
   @IsString()
   @IsNotEmpty()
-  project: string;
-
-  @IsString()
-  @IsNotEmpty()
   name: string;
 
   @IsOptional()
@@ -21,20 +17,13 @@ export class NewItemDto {
 
   @IsOptional()
   @IsArray()
-  allocatedTo?: string[];
+  parentItem?: string;
 
   @IsOptional()
   @IsNumber()
   timeAllocated?: number;
 
-  @IsString()
-  colour: string;
-
   @IsOptional()
   @IsString()
-  parentItemId?: string;
-
-  @IsOptional()
-  @IsString()
-  predecessorItemId?: string;
+  colour?: string;
 }
