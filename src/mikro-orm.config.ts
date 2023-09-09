@@ -12,7 +12,7 @@ import { Notification } from './notification/entities/notification.entity';
 
 export default (configService: ConfigService): Options => {
   return {
-    debug: true,
+    // debug: true,
     entities: [
       CustomBaseEntity,
       User,
@@ -25,15 +25,10 @@ export default (configService: ConfigService): Options => {
       Notification,
     ],
     type: 'postgresql',
-    dbName: 'tasktimedev',
-    user: 'postgres',
-    password: 'm%DLMwTX&xq9LMTb7CvH',
-    host: '172.20.0.2',
-    port: 5432,
-    // dbName: configService.get('DB_NAME'),
-    // user: configService.get('DB_USER'),
-    // password: configService.get('DB_PASS'),
-    // host: configService.get('DB_HOST'),
-    // port: configService.get('DB_PORT'),
+    dbName: process.env.DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT, 10),
   };
 };
