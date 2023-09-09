@@ -1,5 +1,5 @@
 import { Entity, EntityRepositoryType, Property } from '@mikro-orm/core';
-import { CustomBaseEntity } from 'src/shared/entities/customBase.entity';
+import { CustomBaseEntity } from '../../shared/entities/customBase.entity';
 import { EventRepository } from '../repositories/event.repository';
 
 @Entity({ customRepository: () => EventRepository })
