@@ -11,8 +11,8 @@ import { ProjectMemberRole } from '../enum/projectMemberRole.enum';
 
 @Entity()
 export class ProjectMember {
-  @PrimaryKey()
-  id: number;
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'uuid_generate_v4()' })
+  id: string;
 
   @ManyToOne(() => Project)
   project: Reference<Project>;
@@ -22,4 +22,14 @@ export class ProjectMember {
 
   @Enum(() => ProjectMemberRole)
   role: ProjectMemberRole;
+
+  constructor(
+    user: Reference<User>,
+    project: Reference<Project>,
+    role: ProjectMemberRole,
+  ) {
+    this.project = project;
+    this.member = user;
+    this.role = role;
+  }
 }
