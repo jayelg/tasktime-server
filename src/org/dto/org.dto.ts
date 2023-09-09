@@ -1,11 +1,9 @@
-import { IsString, IsNotEmpty, IsArray } from 'class-validator';
-import { IMember } from '../interface/member.interface';
-import { Org } from '../entities/org.entity';
+import { IsString, IsNotEmpty } from 'class-validator';
 
 export class OrgDto {
   @IsString()
   @IsNotEmpty()
-  id: number;
+  id: string;
 
   @IsString()
   @IsNotEmpty()

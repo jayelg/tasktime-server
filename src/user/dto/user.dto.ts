@@ -1,7 +1,7 @@
 // shape of user.schema.ts
 // represents object returned from db
 export class UserDto {
-  id: number;
+  id: string;
   email: string;
   firstName: string;
   lastName: string;

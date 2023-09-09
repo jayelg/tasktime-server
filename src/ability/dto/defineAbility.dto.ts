@@ -1,22 +1,22 @@
-import { IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class defineAbilityDto {
-  @IsNumber()
+  @IsString()
   @IsNotEmpty()
-  userId: number;
+  userId: string;
 
   @IsOptional()
-  @IsNumber()
+  @IsString()
   @IsNotEmpty()
-  orgId?: number;
+  orgId?: string;
 
   @IsOptional()
-  @IsNumber()
+  @IsString()
   @IsNotEmpty()
-  projectId?: number;
+  projectId?: string;
 
   @IsOptional()
-  @IsNumber()
+  @IsString()
   @IsNotEmpty()
-  itemId?: number;
+  itemId?: string;
 }

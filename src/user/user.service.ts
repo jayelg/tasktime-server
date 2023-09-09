@@ -17,7 +17,7 @@ export class UserService {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  async getUser(userId: number): Promise<User> {
+  async getUser(userId: string): Promise<User> {
     return await this.userRepository.findOne(userId);
   }
 
@@ -32,7 +32,7 @@ export class UserService {
     return user;
   }
 
-  async updateUser(userId: number, updates: UpdateUserDto): Promise<User> {
+  async updateUser(userId: string, updates: UpdateUserDto): Promise<User> {
     const user = await this.userRepository.findOne(userId);
     this.userRepository.assign(user, updates);
     await this.em.persistAndFlush(user);
@@ -40,8 +40,8 @@ export class UserService {
   }
 
   async handleInvitedOrgMember(
-    userId: number,
-    orgId: number,
+    userId: string,
+    orgId: string,
     inviteData: InviteToOrgDto,
   ) {
     // get/create invitee user

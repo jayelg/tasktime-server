@@ -12,7 +12,7 @@ export class NotificationController {
   @Get(':notificationId')
   async getNotification(
     @Req() req: UserRequestDto,
-    @Param('notificationId') notificationId: number,
+    @Param('notificationId') notificationId: string,
   ): Promise<Notification> {
     return await this.notificationService.getNotification(
       req.user.id,
@@ -23,7 +23,7 @@ export class NotificationController {
   @Delete(':notificationId')
   async deleteNotification(
     @Req() req: UserRequestDto,
-    @Param('notificationId') notificationId: number,
+    @Param('notificationId') notificationId: string,
   ) {
     await this.notificationService.deleteNotification(
       req.user.id,

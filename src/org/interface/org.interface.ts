@@ -7,7 +7,7 @@ export interface IOrgServiceUpdates {
 }
 
 export interface IOrg {
-  _id: string;
+  id: string;
   name: string;
   createdAt: string;
   description: string;

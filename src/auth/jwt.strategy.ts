@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 interface IPayload {
-  id: number;
+  id: string;
   email: string;
 }
 

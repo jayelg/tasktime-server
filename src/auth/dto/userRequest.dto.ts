@@ -4,7 +4,7 @@ import { Request } from 'express';
 
 class UserData {
   @IsNumber()
-  id: number;
+  id: string;
 
   @IsEmail()
   email: string;
