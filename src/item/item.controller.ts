@@ -12,30 +12,30 @@ import { ItemService } from './item.service';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { NewItemDto } from './dto/newItem.dto';
 import { ApiTags } from '@nestjs/swagger';
+import { CheckAbilities } from 'src/ability/abilities.decorator';
+import { UpdateItemDto } from './dto/updateItem.dto';
+import { Item } from './entities/item.entity';
 import {
-  CheckAbilities,
   CreateItemAbility,
   DeleteItemAbility,
   UpdateItemAbility,
-  ViewProjectAbility,
-} from 'src/ability/abilities.decorator';
-import { UpdateItemDto } from './dto/updateItem.dto';
-import { Item } from './entities/item.entity';
+  ViewItemAbility,
+} from 'src/ability/ability.objects';
 
-@Controller('org/:orgId/projects/:projectId/items')
-@ApiTags('items')
+@Controller('org/:orgId/project/:projectId/item')
+@ApiTags('item')
 export class ItemController {
   constructor(private itemService: ItemService) {}
 
   @Get()
-  @CheckAbilities(new ViewProjectAbility())
-  async getItems(@Body() itemIds: number[]) {
+  @CheckAbilities(new ViewItemAbility())
+  async getAllItems(@Body() itemIds: string[]) {
     return this.itemService.getItems(itemIds);
   }
 
   @Get(':itemId')
-  @CheckAbilities(new ViewProjectAbility())
-  async getItem(@Param('itemId') itemId: number): Promise<Item> {
+  @CheckAbilities(new ViewItemAbility())
+  async getItem(@Param('itemId') itemId: string): Promise<Item> {
     return this.itemService.getItem(itemId);
   }
 
@@ -43,16 +43,16 @@ export class ItemController {
   @CheckAbilities(new CreateItemAbility())
   async createItem(
     @Req() req,
-    @Param('projectId') projectId: number,
+    @Param('projectId') projectId: string,
     @Body() newItem: NewItemDto,
   ) {
-    return await this.itemService.createItem(req.user._id, projectId, newItem);
+    return await this.itemService.createItem(req.user.id, projectId, newItem);
   }
 
   @Patch(':itemId')
   @CheckAbilities(new UpdateItemAbility())
   async updateItem(
-    @Param('itemId') itemId: number,
+    @Param('itemId') itemId: string,
     @Body() changes: UpdateItemDto,
   ) {
     return await this.itemService.updateItem(itemId, changes);
@@ -60,7 +60,7 @@ export class ItemController {
 
   @Delete(':itemId')
   @CheckAbilities(new DeleteItemAbility())
-  async deleteItem(@Param('itemId') itemId: number) {
+  async deleteItem(@Param('itemId') itemId: string) {
     return await this.itemService.deleteItem(itemId);
   }
 }
