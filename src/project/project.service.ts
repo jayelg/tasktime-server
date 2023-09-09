@@ -10,6 +10,8 @@ import { ProjectRepository } from './repositories/project.repository';
 import { Reference } from '@mikro-orm/core';
 import { Org } from 'src/org/entities/org.entity';
 import { User } from 'src/user/entities/user.entity';
+import { ProjectMember } from './entities/projectMember.entity';
+import { ProjectMemberRole } from './enum/projectMemberRole.enum';
 
 @Injectable()
 export class ProjectService {
@@ -20,7 +22,7 @@ export class ProjectService {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  async getProject(projectId: number) {
+  async getProject(projectId: string) {
     try {
       return await this.projectRepository.findOne(projectId);
     } catch (error) {
@@ -29,8 +31,8 @@ export class ProjectService {
   }
 
   async createProject(
-    userId: number,
-    orgId: number,
+    userId: string,
+    orgId: string,
     newProject: CreateProjectDto,
   ) {
     try {
@@ -38,13 +40,20 @@ export class ProjectService {
       const orgRef = Reference.createFromPK(Org, orgId);
       const project = new Project(userRef, orgRef, newProject.name);
       await this.em.persistAndFlush(project);
+      const projectRef = Reference.createFromPK(Project, project.id);
+      const projectMember = new ProjectMember(
+        userRef,
+        projectRef,
+        ProjectMemberRole.Admin,
+      );
+      await this.em.persistAndFlush(projectMember);
       return project;
     } catch (error) {
       throw error;
     }
   }
 
-  async updateProject(projectId: number, updates: UpdateProjectDto) {
+  async updateProject(projectId: string, updates: UpdateProjectDto) {
     try {
       const project = await this.projectRepository.findOne(projectId);
       this.projectRepository.assign(project, updates);
@@ -54,8 +63,11 @@ export class ProjectService {
     }
   }
 
-  async deleteProject(userId: number, projectId: number) {
+  async deleteProject(userId: string, projectId: string) {
     try {
+      const projectMembers =
+        await this.projectRepository.findMembersByProjectId(projectId);
+      await this.em.removeAndFlush(projectMembers);
       const project = await this.projectRepository.findOne(projectId);
       if (!project) {
         throw new Error(`Project with ID ${projectId} not found`);
@@ -77,7 +89,7 @@ export class ProjectService {
     }
   }
 
-  async getSelectedProjects(projectIds: number[]) {
+  async getSelectedProjects(projectIds: string[]) {
     try {
       const qb = this.projectRepository.createQueryBuilder();
       qb.where({ id: { $in: projectIds } });
@@ -85,5 +97,9 @@ export class ProjectService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async getMember(userId: string, projectId: string) {
+    return await this.projectRepository.findProjectMember(userId, projectId);
   }
 }
