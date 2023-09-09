@@ -27,7 +27,7 @@ export class NotificationService {
   notFoundError = 'Notification not found';
 
   // todo: return pagnated result instead of all
-  async getAllNotifications(userId: number): Promise<Notification[]> {
+  async getAllNotifications(userId: string): Promise<Notification[]> {
     try {
       const notifications = await this.notificationRepository.find({
         user: userId,
@@ -47,8 +47,8 @@ export class NotificationService {
 
   // todo move auth to CASL
   async getNotification(
-    userId: number,
-    notificationId: number,
+    userId: string,
+    notificationId: string,
   ): Promise<Notification> {
     try {
       const notification = await this.notificationRepository.findOne(
@@ -78,7 +78,7 @@ export class NotificationService {
   }
 
   async updateRead(
-    notificationId: number,
+    notificationId: string,
     newRead: boolean,
   ): Promise<Notification> {
     try {
@@ -94,8 +94,8 @@ export class NotificationService {
   }
 
   async deleteNotification(
-    userId: number,
-    notificationId: number,
+    userId: string,
+    notificationId: string,
   ): Promise<void> {
     try {
       const notification = this.notificationRepository.findOne(notificationId);
