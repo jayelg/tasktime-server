@@ -6,7 +6,7 @@ import {
   Reference,
 } from '@mikro-orm/core';
 import { CustomBaseEntity } from 'src/shared/entities/customBase.entity';
-import { User } from 'src/user/entities/user.entity';
+import { User } from '../../user/entities/user.entity';
 import { MessageRepository } from '../repositories/message.repository';
 
 @Entity({ customRepository: () => MessageRepository })
