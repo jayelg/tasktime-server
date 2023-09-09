@@ -1,15 +1,24 @@
-import { Entity, ManyToOne, Property, Reference } from '@mikro-orm/core';
+import {
+  Entity,
+  EntityRepositoryType,
+  ManyToOne,
+  Property,
+  Reference,
+} from '@mikro-orm/core';
 import { Project } from '../../project/entities/project.entity';
 import { User } from '../../user/entities/user.entity';
-import { CustomBaseEntity } from 'src/shared/entities/customBase.entity';
+import { CustomBaseEntity } from '../../shared/entities/customBase.entity';
+import { ItemRepository } from '../repositories/item.repository';
 
-@Entity()
+@Entity({ customRepository: () => ItemRepository })
 export class Item extends CustomBaseEntity {
+  [EntityRepositoryType]?: ItemRepository;
+
   @ManyToOne(() => Project)
   project: Reference<Project>;
 
-  @ManyToOne(() => Item)
-  parentItem: Reference<Item>;
+  @ManyToOne(() => Item, { nullable: true })
+  parentItem?: Reference<Item>;
 
   @Property()
   name = 'New Item';
@@ -18,7 +27,7 @@ export class Item extends CustomBaseEntity {
   creator: Reference<User>;
 
   @Property()
-  description: string;
+  description = '';
 
   @Property()
   timeAllocated = 0;
@@ -26,9 +35,20 @@ export class Item extends CustomBaseEntity {
   @Property()
   timeSpent = 0;
 
-  @Property()
+  @Property({ type: 'boolean' })
   isComplete = false;
 
   @Property()
-  colour: string;
+  colour = '';
+
+  constructor(
+    user: Reference<User>,
+    project: Reference<Project>,
+    name: string,
+  ) {
+    super();
+    this.creator = user;
+    this.project = project;
+    this.name = name;
+  }
 }
