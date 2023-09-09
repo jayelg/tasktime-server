@@ -29,4 +29,8 @@ export class UpdateProjectDto {
   @IsOptional()
   @IsBoolean()
   isComplete: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isHidden: boolean;
 }
