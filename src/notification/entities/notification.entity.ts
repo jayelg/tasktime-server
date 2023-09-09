@@ -5,8 +5,8 @@ import {
   Property,
   Reference,
 } from '@mikro-orm/core';
-import { CustomBaseEntity } from 'src/shared/entities/customBase.entity';
-import { User } from 'src/user/entities/user.entity';
+import { CustomBaseEntity } from '../../shared/entities/customBase.entity';
+import { User } from '../../user/entities/user.entity';
 import { NotificationRepository } from '../repositories/notification.repository';
 
 @Entity({ customRepository: () => NotificationRepository })
