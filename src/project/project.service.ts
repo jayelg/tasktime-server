@@ -1,27 +1,31 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Project, ProjectDocument } from './project.schema';
-import { Model, Types } from 'mongoose';
+import { Injectable } from '@nestjs/common';
 import { CreateProjectDto } from './dto/createProject.dto';
 import { UpdateProjectDto } from './dto/updateProject.dto';
-import { IProject } from './interface/project.interface';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ProjectCreatedEvent } from './event/projectCreated.event';
 import { ProjectDeletedEvent } from './event/projectDeleted.event';
-import { ProjectDto } from './dto/project.dto';
+import { EntityManager } from '@mikro-orm/postgresql';
+import { Project } from './entities/project.entity';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { ProjectRepository } from './repositories/project.repository';
+import { Reference } from '@mikro-orm/core';
+import { Org } from 'src/org/entities/org.entity';
+import { User } from 'src/user/entities/user.entity';
+import { ProjectMember } from './entities/projectMember.entity';
+import { ProjectMemberRole } from './enum/projectMemberRole.enum';
 
 @Injectable()
 export class ProjectService {
   constructor(
-    @InjectModel('Project') private readonly projects: Model<Project>,
+    private readonly em: EntityManager,
+    @InjectRepository(Project)
+    private readonly projectRepository: ProjectRepository,
     private eventEmitter: EventEmitter2,
   ) {}
 
-  async getProject(projectId: string): Promise<ProjectDto> {
+  async getProject(projectId: string) {
     try {
-      return new ProjectDto(await this.projects.findById(projectId));
+      return await this.projectRepository.findOne(projectId);
     } catch (error) {
-      // todo: log error
       throw error;
     }
   }
@@ -30,60 +34,52 @@ export class ProjectService {
     userId: string,
     orgId: string,
     newProject: CreateProjectDto,
-  ): Promise<ProjectDto> {
+  ) {
     try {
-      const formattedProject = new this.projects({
-        name: newProject.name,
-        creator: new Types.ObjectId(new Types.ObjectId(userId)),
-        members: [{ _id: new Types.ObjectId(userId), role: 'projectAdmin' }],
-        org: new Types.ObjectId(orgId),
-        createdAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-        updatedAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-      });
-      const project = new ProjectDto(await formattedProject.save());
-      this.eventEmitter.emit(
-        'project.created',
-        new ProjectCreatedEvent(
-          project._id,
-          project.name,
-          project.org,
-          project.createdAt,
-          userId,
-        ),
+      const userRef = Reference.createFromPK(User, userId);
+      const orgRef = Reference.createFromPK(Org, orgId);
+      const project = new Project(userRef, orgRef, newProject.name);
+      await this.em.persistAndFlush(project);
+      const projectRef = Reference.createFromPK(Project, project.id);
+      const projectMember = new ProjectMember(
+        userRef,
+        projectRef,
+        ProjectMemberRole.Admin,
       );
+      await this.em.persistAndFlush(projectMember);
       return project;
     } catch (error) {
-      // todo: log error
       throw error;
     }
   }
 
-  async updateProject(
-    projectId: string,
-    changes: UpdateProjectDto,
-  ): Promise<ProjectDto> {
+  async updateProject(projectId: string, updates: UpdateProjectDto) {
     try {
-      const projectDoc = await this.projects.findById(projectId);
-      Object.assign(projectDoc, changes);
-      return new ProjectDto(await projectDoc.save());
+      const project = await this.projectRepository.findOne(projectId);
+      this.projectRepository.assign(project, updates);
+      return project;
     } catch (error) {
-      // todo: log error
       throw error;
     }
   }
 
-  // either a orgAdmin or a projectAdmin can delete a project
   async deleteProject(userId: string, projectId: string) {
     try {
-      const project = new ProjectDto(
-        await this.projects.findByIdAndDelete(projectId),
-      );
+      const projectMembers =
+        await this.projectRepository.findMembersByProjectId(projectId);
+      await this.em.removeAndFlush(projectMembers);
+      const project = await this.projectRepository.findOne(projectId);
+      if (!project) {
+        throw new Error(`Project with ID ${projectId} not found`);
+      }
+      await this.em.removeAndFlush(project);
+
       this.eventEmitter.emit(
         'project.deleted',
         new ProjectDeletedEvent(
-          project._id,
+          project.id,
           project.name,
-          project.org,
+          project.org.unwrap().id,
           new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
           userId,
         ),
@@ -93,18 +89,17 @@ export class ProjectService {
     }
   }
 
-  // needs to check auth
-  async getSelectedProjects(
-    userId: string,
-    projectIds: string[],
-  ): Promise<IProject[]> {
-    const projectDocs = await this.projects
-      .find({ _id: { $in: projectIds } })
-      .exec();
-    const projects = projectDocs.map((project) => new ProjectDto(project));
-    // only return projects that user is a member of
-    return projects.filter((project) =>
-      project.members.some((member) => member._id === userId),
-    );
+  async getSelectedProjects(projectIds: string[]) {
+    try {
+      const qb = this.projectRepository.createQueryBuilder();
+      qb.where({ id: { $in: projectIds } });
+      return await qb.getResult();
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getMember(userId: string, projectId: string) {
+    return await this.projectRepository.findProjectMember(userId, projectId);
   }
 }

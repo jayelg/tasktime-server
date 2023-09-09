@@ -1,125 +1,93 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Item, ItemDocument } from './item.schema';
-import mongoose, { Model, Types } from 'mongoose';
 import { NewItemDto } from './dto/newItem.dto';
-import { IItem } from './interface/item.interface';
-import { ItemDto } from './dto/item.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ItemCreatedEvent } from './event/itemCreated.event';
 import { ItemDeletedEvent } from './event/itemDeleted.event';
+import { EntityManager } from '@mikro-orm/postgresql';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { Item } from './entities/item.entity';
+import { ItemRepository } from './repositories/item.repository';
+import { Reference } from '@mikro-orm/core';
+import { User } from 'src/user/entities/user.entity';
+import { Project } from 'src/project/entities/project.entity';
+import { ItemMember } from './entities/itemMember.entity';
+import { ItemMemberRole } from './enum/itemMemberRole.enum';
 
 @Injectable()
 export class ItemService {
   constructor(
-    @InjectModel('Item') private readonly items: Model<Item>,
+    private readonly em: EntityManager,
+    @InjectRepository(Item)
+    private readonly itemRepository: ItemRepository,
     private eventEmitter: EventEmitter2,
   ) {}
 
-  private itemDocToIitem(itemDoc: ItemDocument): IItem {
-    const item: IItem = {
-      ...itemDoc.toJSON(),
-      // convert all objectId types to strings
-      _id: itemDoc._id.toString(),
-      project: itemDoc.project.toString(),
-      allocatedTo: itemDoc.allocatedTo.map((user) => user.toString()),
-      reviewers: itemDoc.reviewers.map((reviewer) => reviewer.toString()),
-      nestedItemIds: itemDoc.nestedItemIds.map((nestedItemId) =>
-        nestedItemId.toString(),
-      ),
-      parentItemId: itemDoc.parentItemId.toString(),
-      predecessorItemId: itemDoc.parentItemId.toString(),
-      successorItemId: itemDoc.parentItemId.toString(),
-      itemObjects: itemDoc.itemObjects.map((itemObject) =>
-        itemObject.toString(),
-      ),
-    };
-    return item;
-  }
-
-  async getItems(itemIds: string[]) {
-    const itemDocs = await this.items.find({ _id: { $in: itemIds } }).exec();
-    return itemDocs.map((item) => new ItemDto(item));
+  async getItems(itemIds: string[]): Promise<Item[]> {
+    const qb = this.itemRepository.createQueryBuilder();
+    qb.where({ id: { $in: itemIds } });
+    return await qb.getResult();
   }
 
   // todo add check user and role authorization
-  async getItem(itemId: string): Promise<IItem> {
-    return this.itemDocToIitem(await this.items.findById(itemId));
+  async getItem(itemId: string): Promise<Item> {
+    try {
+      return this.itemRepository.findOneOrFail(itemId);
+    } catch (error) {
+      throw new NotFoundException('item not found');
+    }
   }
 
   async createItem(userId: string, projectId: string, newItem: NewItemDto) {
-    const formattedItem = await this.items.create({
-      projectId: new Types.ObjectId(projectId),
-      name: newItem.name,
-      creator: new Types.ObjectId(userId),
-      description: newItem.description || '',
-      createdAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-      updatedAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-      allocatedTo: newItem.allocatedTo
-        ? newItem.allocatedTo.map(
-            (allocatedUser) => new Types.ObjectId(allocatedUser),
-          )
-        : [new Types.ObjectId(userId)], // fallback to userId if none provided
-      timeAllocated: newItem.timeAllocated,
-      colour: newItem.colour,
-      parentItemId: new Types.ObjectId(newItem.parentItemId || projectId),
-      predecessorItemId: new Types.ObjectId(
-        newItem.predecessorItemId || projectId,
-      ),
-    });
+    const userRef = Reference.createFromPK(User, userId);
+    const projectRef = Reference.createFromPK(Project, projectId);
+    const item = new Item(userRef, projectRef, newItem.name);
+    await this.em.persistAndFlush(item);
+    const itemRef = Reference.createFromPK(Item, item.id);
+    const itemMember = new ItemMember(userRef, itemRef, ItemMemberRole.Owner);
+    await this.em.persistAndFlush(itemMember);
     this.eventEmitter.emit(
       'item.created',
-      new ItemCreatedEvent(
-        formattedItem._id.toString(),
-        formattedItem.project.toString(),
-        formattedItem.createdAt,
-        formattedItem.creator.toString(),
-      ),
+      new ItemCreatedEvent(item.id, projectId, item.createdAt, userId),
     );
-    return formattedItem;
+    return item;
   }
 
-  async updateItem(itemId: string, changes: object) {
-    const item = await this.items.findByIdAndUpdate(itemId, changes);
-
-    if (!item) {
-      throw new NotFoundException(
-        `Update Item Service: Item ${itemId} not found`,
-      );
-    }
-
+  async updateItem(itemId: string, updates: object) {
     try {
-      return await this.items.updateOne({ _id: itemId }, { $set: changes });
+      const item = await this.itemRepository.findOne(itemId);
+      this.itemRepository.assign(item, updates);
+      await this.em.persistAndFlush(item);
+      return item;
     } catch (error) {
       throw error;
     }
   }
 
   async deleteItem(itemId: string) {
-    const item = await this.items.findByIdAndDelete(itemId);
-    this.eventEmitter.emit(
-      'item.created',
-      new ItemDeletedEvent(
-        itemId,
-        item.project.toString(),
-        new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-        item.creator.toString(),
-      ),
-    );
-    // implement in the project service
-    // const itemIndex = project.items.findIndex(
-    //   (item: mongoose.Types.ObjectId) => item.toString() === itemId,
-    // );
-    // if (itemIndex === -1) {
-    //   throw new NotFoundException(
-    //     `Delete Item Service: Item ${itemId} not found`,
-    //   );
-    // }
-    // project.items.splice(itemIndex, 1);
-    // try {
-    //   await project.save();
-    // } catch (error) {
-    //   throw error;
-    // }
+    try {
+      const itemMembers = await this.itemRepository.findMembersByItemId(itemId);
+      await this.em.removeAndFlush(itemMembers);
+      const item = await this.itemRepository.findOne(itemId);
+      if (!item) {
+        throw new Error(`Item with ID ${itemId} not found`);
+      }
+      await this.em.removeAndFlush(item);
+
+      // this.eventEmitter.emit(
+      //   'item.deleted',
+      //   new ItemDeletedEvent(
+      //     itemId,
+      //     item.project.toJSON().id,
+      //     new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
+      //     item.creator.toJSON().id,
+      //   ),
+      // );
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getMember(userId: string, itemId: string) {
+    return await this.itemRepository.findItemMember(userId, itemId);
   }
 }

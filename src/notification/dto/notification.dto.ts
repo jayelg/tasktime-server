@@ -1,13 +1,11 @@
-import { IsBoolean, IsIn, IsNotEmpty, IsString } from 'class-validator';
-import { ICreateNotification } from '../interface/createNotification.interface';
-import { Notification } from '../notification.schema';
+import { IsBoolean, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
-export class NotificationDto implements ICreateNotification {
-  @IsString()
+export class NotificationDto {
+  @IsNumber()
   @IsNotEmpty()
-  _id: string;
+  id: string;
 
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
   user: string;
 
@@ -15,41 +13,27 @@ export class NotificationDto implements ICreateNotification {
   @IsNotEmpty()
   createdAt: string;
 
+  @IsString()
+  @IsNotEmpty()
+  updatedAt: string;
+
   @IsBoolean()
   @IsNotEmpty()
-  unread: boolean;
+  read: boolean;
 
   @IsString()
   @IsNotEmpty()
   title: string;
 
-  @IsString()
   @IsNotEmpty()
-  body: string;
+  data: any[];
 
-  @IsString()
-  @IsNotEmpty()
-  button: string;
-
-  // add more types as I go
-  @IsString()
-  @IsIn(['general', 'orgInvite', 'projectAdd', 'itemToReview'])
-  @IsNotEmpty()
-  type: string;
-
-  @IsString()
-  @IsNotEmpty()
-  reference: string;
-
-  constructor(data: Notification | NotificationDto) {
-    this._id = data._id.toString();
-    this.user = data.user.toString();
+  constructor(data: NotificationDto) {
+    this.id = data.id;
+    this.user = data.user;
     this.createdAt = data.createdAt;
-    this.unread = data.unread;
+    this.read = data.read;
     this.title = data.title;
-    this.body = data.body;
-    this.button = data.button;
-    this.type = data.type;
-    this.reference = data.reference;
+    this.data = data.data;
   }
 }

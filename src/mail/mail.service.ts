@@ -52,8 +52,7 @@ export class MailService {
       template: './notification',
       context: {
         title: payload.notification.title,
-        body: payload.notification.body,
-        button: payload.notification.button,
+        data: payload.notification.data,
         url: 'url',
         appName: this.appName,
         appUrl: this.appUrl,

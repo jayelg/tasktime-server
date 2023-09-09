@@ -3,38 +3,41 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Notification } from './notification.schema';
-import mongoose, { Types } from 'mongoose';
-import { InjectModel } from '@nestjs/mongoose';
 import { CreateNotificationDto } from './dto/createNotification.dto';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { MemberInvitedEvent } from 'src/org/event/memberInvited.event';
 import { NotificationMemberInvitedEvent } from './event/notificationMemberInvited.event';
 import { NotificationDeletedEvent } from './event/notificationDeleted.event';
 import { NotificationDto } from './dto/notification.dto';
+import { EntityManager, Reference } from '@mikro-orm/core';
+import { Notification } from './entities/notification.entity';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { NotificationRepository } from './repositories/notification.repository';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class NotificationService {
   constructor(
-    @InjectModel('Notification')
-    private readonly notifications: mongoose.Model<Notification>,
+    private readonly em: EntityManager,
+    @InjectRepository(Notification)
+    private readonly notificationRepository: NotificationRepository,
     private eventEmitter: EventEmitter2,
   ) {}
 
   notFoundError = 'Notification not found';
 
   // todo: return pagnated result instead of all
-  async getAllNotifications(userId: string): Promise<NotificationDto[]> {
+  async getAllNotifications(userId: string): Promise<Notification[]> {
     try {
-      const notifications = await this.notifications
-        .find({ user: userId })
-        .exec();
+      const notifications = await this.notificationRepository.find({
+        user: userId,
+      });
       if (notifications.length === 0) {
         throw new NotFoundException(
           `Get All Notifications Service: No notifications for ${userId}`,
         );
       } else {
-        return notifications.map((note) => new NotificationDto(note));
+        return notifications;
       }
     } catch (error) {
       // todo: log error
@@ -46,11 +49,12 @@ export class NotificationService {
   async getNotification(
     userId: string,
     notificationId: string,
-  ): Promise<NotificationDto> {
+  ): Promise<Notification> {
     try {
-      const notificationDoc = await this.notifications.findById(notificationId);
-      const notification = new NotificationDto(notificationDoc);
-      if (notification.user === userId) {
+      const notification = await this.notificationRepository.findOne(
+        notificationId,
+      );
+      if (notification.user.unwrap().id === userId) {
         return notification;
       }
     } catch (error) {
@@ -60,28 +64,32 @@ export class NotificationService {
 
   async createNotification(
     notificationData: CreateNotificationDto,
-  ): Promise<NotificationDto> {
-    const newNotification = new this.notifications({
-      ...notificationData,
-      user: new Types.ObjectId(notificationData.user),
-      createdAt: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-      unread: true,
-    });
-    return new NotificationDto(await newNotification.save());
+  ): Promise<Notification> {
+    try {
+      const notification = new Notification();
+      notification.user = Reference.createFromPK(User, notificationData.user);
+      notification.title = notificationData.title;
+      notification.data = notificationData.data;
+      this.em.persistAndFlush(notification);
+      return notification;
+    } catch (error) {
+      throw error;
+    }
   }
 
-  async updateUnread(
+  async updateRead(
     notificationId: string,
-    newUnread: boolean,
-  ): Promise<NotificationDto> {
+    newRead: boolean,
+  ): Promise<Notification> {
     try {
-      return new NotificationDto(
-        await this.notifications.findByIdAndUpdate(notificationId, {
-          unread: newUnread,
-        }),
+      const notification = await this.notificationRepository.findOne(
+        notificationId,
       );
+      notification.read = newRead;
+      this.em.persistAndFlush(notification);
+      return notification;
     } catch (error) {
-      throw new NotFoundException(this.notFoundError);
+      throw error;
     }
   }
 
@@ -90,41 +98,36 @@ export class NotificationService {
     notificationId: string,
   ): Promise<void> {
     try {
-      const notification = new NotificationDto(
-        await this.notifications.findById(notificationId),
-      );
-      if (!(notification.user === userId)) {
-        throw new UnauthorizedException();
+      const notification = this.notificationRepository.findOne(notificationId);
+      if (!notification) {
+        throw new NotFoundException(this.notFoundError);
       }
-      await this.notifications.findByIdAndDelete(notificationId);
-      this.eventEmitter.emit(
-        'notification.deleted',
-        new NotificationDeletedEvent(notification),
-      );
+      await this.em.removeAndFlush(notification);
     } catch (error) {
-      throw new NotFoundException(this.notFoundError);
+      throw error;
     }
   }
 
-  @OnEvent('org.memberInvited', { async: true })
-  async orgInvite(payload: MemberInvitedEvent) {
-    const notificationTitle = `${
-      payload.invitedByName !== ''
-        ? `${payload.invitedByName} has invited you`
-        : `You have been invited`
-    } to join ${payload.orgName}`;
-    const newNotification: CreateNotificationDto = {
-      user: payload.invitedByUserId,
-      title: notificationTitle,
-      body: 'Click here to join',
-      button: 'Accept',
-      type: 'orgInvite',
-      reference: payload.invitedByUserId,
-    };
-    const notification = await this.createNotification(newNotification);
-    this.eventEmitter.emit(
-      'notification.memberInvited',
-      new NotificationMemberInvitedEvent(notification, payload.inviteeEmail),
-    );
-  }
+  // move to orgService/
+  // @OnEvent('org.memberInvited', { async: true })
+  // async orgInvite(payload: MemberInvitedEvent) {
+  //   const notificationTitle = `${
+  //     payload.invitedByName !== ''
+  //       ? `${payload.invitedByName} has invited you`
+  //       : `You have been invited`
+  //   } to join ${payload.orgName}`;
+  //   const newNotification: CreateNotificationDto = {
+  //     user: payload.invitedByUserId,
+  //     title: notificationTitle,
+  //     body: 'Click here to join',
+  //     button: 'Accept',
+  //     type: 'orgInvite',
+  //     reference: payload.invitedByUserId.toString(),
+  //   };
+  //   const notification = await this.createNotification(newNotification);
+  //   this.eventEmitter.emit(
+  //     'notification.memberInvited',
+  //     new NotificationMemberInvitedEvent(notification, payload.inviteeEmail),
+  //   );
+  // }
 }

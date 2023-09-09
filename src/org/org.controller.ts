@@ -8,26 +8,20 @@ import {
   Body,
   Req,
 } from '@nestjs/common';
-
-//Services
 import { OrgService } from './org.service';
-
-// DTO
 import { CreateOrgDto } from './dto/createOrg.dto';
 import { UpdateOrgDto } from './dto/updateOrg.dto';
-// Interface
-import { IOrg } from './interface/org.interface';
-
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrgDto } from './dto/org.dto';
-import {
-  CheckAbilities,
-  CreateOrgAbility,
-  DeleteOrgAbility,
-  UpdateOrgAbility,
-  ViewOrgAbility,
-} from 'src/ability/abilities.decorator';
+import { CheckAbilities } from 'src/ability/abilities.decorator';
 import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
+import { Org } from './entities/org.entity';
+import {
+  CreateOrgAbility,
+  ViewOrgAbility,
+  UpdateOrgAbility,
+  DeleteOrgAbility,
+} from 'src/ability/ability.objects';
 
 @Controller('org')
 @ApiTags('org')
@@ -36,7 +30,7 @@ export class OrgController {
 
   @Post()
   @CheckAbilities(new CreateOrgAbility())
-  async createOrg(@Req() req, @Body() newOrg: CreateOrgDto): Promise<IOrg> {
+  async createOrg(@Req() req, @Body() newOrg: CreateOrgDto): Promise<Org> {
     return await this.orgService.createOrg(req.user.id, newOrg);
   }
 
@@ -47,7 +41,7 @@ export class OrgController {
   async getOrg(
     @Req() req: UserRequestDto,
     @Param('orgId') orgId: string,
-  ): Promise<OrgDto> {
+  ): Promise<Org> {
     return await this.orgService.getOrg(orgId);
   }
 
@@ -59,7 +53,7 @@ export class OrgController {
     @Req() req: UserRequestDto,
     @Param('orgId') orgId: string,
     @Body() orgUpdates: UpdateOrgDto,
-  ): Promise<IOrg> {
+  ): Promise<Org> {
     return await this.orgService.updateOrg(orgId, orgUpdates);
   }
 
@@ -82,7 +76,7 @@ export class OrgController {
     @Param('orgId') orgId: string,
     @Param('memberId') memberId: string,
   ) {
-    return await this.orgService.getMember(orgId, memberId);
+    return await this.orgService.getMember(memberId, orgId);
   }
 
   @Delete(':orgId/member/:memberId')

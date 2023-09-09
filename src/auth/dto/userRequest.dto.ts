@@ -1,9 +1,9 @@
 // extends the request object with the decoded JWT payload that is added by the jwt validation
-import { IsEmail, IsString } from 'class-validator';
+import { IsEmail, IsNumber } from 'class-validator';
 import { Request } from 'express';
 
 class UserData {
-  @IsString()
+  @IsNumber()
   id: string;
 
   @IsEmail()

@@ -7,6 +7,7 @@ declare module 'express' {
     params: {
       orgId: string;
       projectId: string;
+      itemId: string;
     };
   }
 }

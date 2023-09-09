@@ -11,31 +11,31 @@ import {
 import { ItemService } from './item.service';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { NewItemDto } from './dto/newItem.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
+import { CheckAbilities } from 'src/ability/abilities.decorator';
+import { UpdateItemDto } from './dto/updateItem.dto';
+import { Item } from './entities/item.entity';
 import {
-  CheckAbilities,
   CreateItemAbility,
   DeleteItemAbility,
   UpdateItemAbility,
-  ViewProjectAbility,
-} from 'src/ability/abilities.decorator';
-import { IItem } from './interface/item.interface';
-import { UpdateItemDto } from './dto/updateItem.dto';
+  ViewItemAbility,
+} from 'src/ability/ability.objects';
 
-@Controller('org/:orgId/projects/:projectId/items')
-@ApiTags('items')
+@Controller('org/:orgId/project/:projectId/item')
+@ApiTags('item')
 export class ItemController {
   constructor(private itemService: ItemService) {}
 
   @Get()
-  @CheckAbilities(new ViewProjectAbility())
-  async getItems(@Body() itemIds: string[]) {
+  @CheckAbilities(new ViewItemAbility())
+  async getAllItems(@Body() itemIds: string[]) {
     return this.itemService.getItems(itemIds);
   }
 
   @Get(':itemId')
-  @CheckAbilities(new ViewProjectAbility())
-  async getItem(@Param('itemId') itemId: string): Promise<IItem> {
+  @CheckAbilities(new ViewItemAbility())
+  async getItem(@Param('itemId') itemId: string): Promise<Item> {
     return this.itemService.getItem(itemId);
   }
 
@@ -46,33 +46,7 @@ export class ItemController {
     @Param('projectId') projectId: string,
     @Body() newItem: NewItemDto,
   ) {
-    const createdItem = await this.itemService.createItem(
-      req.user._id,
-      projectId,
-      newItem,
-    );
-
-    // move to service
-    // update parent nested item relationships
-    if (createdItem.parentItemId.toString() !== projectId) {
-      const parentItem = await this.itemService.getItem(newItem.parentItemId);
-      const updatedNestedItemIds = {
-        nestedItemIds: [
-          ...parentItem.nestedItemIds,
-          createdItem._id.toString(),
-        ],
-      };
-      await this.itemService.updateItem(
-        newItem.parentItemId,
-        updatedNestedItemIds,
-      );
-    }
-    // update predecessor item relationships
-    if (newItem.predecessorItemId) {
-      const changes = { successorItemId: createdItem._id.toString() };
-      await this.itemService.updateItem(newItem.predecessorItemId, changes);
-    }
-    return createdItem;
+    return await this.itemService.createItem(req.user.id, projectId, newItem);
   }
 
   @Patch(':itemId')

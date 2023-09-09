@@ -1,11 +1,9 @@
-import { IsString, IsNotEmpty, IsArray } from 'class-validator';
-import { IMember } from '../interface/member.interface';
-import { Org } from '../org.schema';
+import { IsString, IsNotEmpty } from 'class-validator';
 
 export class OrgDto {
   @IsString()
   @IsNotEmpty()
-  _id: string;
+  id: string;
 
   @IsString()
   @IsNotEmpty()
@@ -18,18 +16,10 @@ export class OrgDto {
   @IsString()
   description: string;
 
-  @IsArray()
-  members: IMember[];
-
-  @IsArray()
-  projects: string[];
-
-  constructor(data: Org | OrgDto) {
-    this._id = data._id.toString();
+  constructor(data: OrgDto) {
+    this.id = data.id;
     this.name = data.name;
     this.createdAt = data.createdAt;
     this.description = data.description;
-    this.members = data.members.map((member) => member._id.toString());
-    this.projects = data.projects.map((project) => project._id.toString());
   }
 }
