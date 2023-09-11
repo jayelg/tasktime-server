@@ -20,7 +20,7 @@ export class User extends CustomBaseEntity {
   avatar = '';
 
   @Property()
-  lastLoginAt = '';
+  lastLoginAt: Date = new Date();
 
   @Property({ type: 'boolean' })
   disabled = false;
