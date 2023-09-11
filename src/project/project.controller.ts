@@ -27,6 +27,12 @@ import {
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
+  @Get()
+  @CheckAbilities(new ViewProjectAbility())
+  async getAllProjects(@Req() req: UserRequestDto): Promise<Project[]> {
+    return await this.projectService.getAllProjects(req.user.id);
+  }
+
   @Get(':projectId')
   @CheckAbilities(new ViewProjectAbility())
   async getProject(@Param('projectId') projectId: string): Promise<Project> {
