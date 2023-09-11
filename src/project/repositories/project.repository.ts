@@ -16,4 +16,10 @@ export class ProjectRepository extends EntityRepository<Project> {
       project: projectId,
     });
   }
+
+  async findProjectsByMemberId(userId: string): Promise<ProjectMember[]> {
+    return await this.em.find(ProjectMember, {
+      member: userId,
+    });
+  }
 }

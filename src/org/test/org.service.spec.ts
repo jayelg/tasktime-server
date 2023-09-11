@@ -1,31 +1,51 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrgService } from '../org.service';
-import { OrgDto } from '../dto/org.dto';
-import mongoose, { Model } from 'mongoose';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Org, OrgSchema } from '../org.schema';
-import { MongooseModule, getModelToken } from '@nestjs/mongoose';
-import {
-  closeInMongodConnection,
-  rootMongooseTestModule,
-} from 'src/test/utils/mongoTest.module';
+import { EntityManager } from '@mikro-orm/postgresql';
+import { getRepositoryToken } from '@mikro-orm/nestjs';
+import { Org } from '../entities/org.entity';
+import { OrgRepository } from '../repositories/org.repository';
+import { CreateOrgDto } from '../dto/createOrg.dto';
+import { UpdateOrgDto } from '../dto/updateOrg.dto';
+import { OrgMember } from '../entities/orgMember.entity';
+import { User } from 'src/user/entities/user.entity';
+import { OrgMemberRole } from '../enum/orgMemberRole.enum';
 
 describe('OrgService', () => {
   let service: OrgService;
-  let orgModel: Model<Org>;
 
   const mockEventEmitter = {
     emit: jest.fn(),
   };
 
+  const mockEntityManager = {
+    persistAndFlush: jest.fn(),
+    getReference: jest.fn(),
+    removeAndFlush: jest.fn(),
+  };
+
+  const mockOrgRepository = {
+    findOne: jest.fn(),
+    assign: jest.fn(),
+    findMembersByOrgId: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        rootMongooseTestModule(),
-        MongooseModule.forFeature([{ name: 'Org', schema: OrgSchema }]),
-      ],
       providers: [
         OrgService,
+        {
+          provide: EntityManager,
+          useValue: mockEntityManager,
+        },
+        {
+          provide: getRepositoryToken(Org),
+          useValue: mockOrgRepository,
+        },
+        {
+          provide: OrgRepository,
+          useValue: mockOrgRepository,
+        },
         {
           provide: EventEmitter2,
           useValue: mockEventEmitter,
@@ -34,40 +54,87 @@ describe('OrgService', () => {
     }).compile();
 
     service = module.get<OrgService>(OrgService);
-    orgModel = module.get<Model<Org>>(getModelToken('Org'));
 
-    // clear in memory db before each test
-    await orgModel.deleteMany({});
-
-    // clear events recorded before each test
+    // clear all mock response values before each test
     mockEventEmitter.emit.mockClear();
+    mockOrgRepository.findOne.mockClear();
+    mockEntityManager.getReference.mockClear();
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  // describe('createOrg', () => {
-  //   it('should create organization', () => {
-  //     // Creator is org admin by default
-  //     const orgAdminUserId = '64a63893bc1b3da3558df2bf';
-  //     const newOrg: CreateOrgDto = {
-  //       name: 'Test Org 1',
-  //     };
+  describe('getAllOrgs', () => {
+    it('should return an array of orgs', async () => {
+      const orgId = 'org-id';
+      const org = new Org('org-name');
+      const expectedResult = [org, { ...org }];
+      mockOrgRepository.findOne.mockResolvedValue(expectedResult);
+      const result = await service.getOrg(orgId);
 
-  //     // Act
-  //     const org = service.createOrg(orgAdminUserId, newOrg);
+      expect(result).toBeInstanceOf(Array);
+      expect(result).toEqual(
+        expect.arrayContaining(
+          expectedResult.map((org) => expect.objectContaining(org)),
+        ),
+      );
+    });
+  });
 
-  //     // Assert
-  //     expect(org).toBe(newOrg.name); // org.name
-  //     expect(org).toContain(
-  //       // org.members
-  //       new mongoose.Types.ObjectId(orgAdminUserId),
-  //     );
-  //   });
-  // });
+  describe('getOrg', () => {
+    it('should return an org', async () => {
+      const orgId = 'org-id';
+      const org = new Org('org-name');
+      mockOrgRepository.findOne.mockResolvedValue(org);
+      const result = await service.getOrg(orgId);
 
-  afterAll(async () => {
-    await closeInMongodConnection();
+      expect(result).toBeInstanceOf(Org);
+    });
+  });
+
+  describe('createOrg', () => {
+    it('should return an org', async () => {
+      const userId = 'mock-user-id';
+      const newOrgName = 'mock-org-name';
+      const data = new CreateOrgDto();
+      data.name = newOrgName;
+      const expectedResult = new Org(newOrgName);
+
+      const result = await service.createOrg(userId, data);
+
+      expect(result).toBeInstanceOf(Org);
+      expect(result.name).toEqual(expectedResult.name);
+    });
+  });
+
+  describe('updateOrg', () => {
+    it('should return an org', async () => {
+      const orgId = 'mock-org-id';
+      const newOrgName = 'mock-org-name';
+      const updates = new UpdateOrgDto();
+      updates.name = newOrgName;
+      const expectedResult = new Org(newOrgName);
+      mockOrgRepository.findOne.mockResolvedValue(expectedResult);
+
+      const result = await service.updateOrg(orgId, updates);
+
+      expect(result).toBeInstanceOf(Org);
+    });
+  });
+
+  describe('deleteOrg', () => {
+    it('should return undefined', async () => {
+      const orgId = 'mock-org-id';
+      const user = new User('mock@email.com');
+      const org = new Org('org-name');
+      const orgMember = new OrgMember(user, org, OrgMemberRole.Admin);
+      mockOrgRepository.findMembersByOrgId.mockResolvedValue(orgMember);
+      mockOrgRepository.findOne.mockResolvedValue(org);
+
+      const result = await service.deleteOrg(orgId);
+
+      expect(result).toBe(undefined);
+    });
   });
 });

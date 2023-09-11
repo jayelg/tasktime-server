@@ -1,32 +1,44 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationService } from '../notification.service';
-import { MongooseModule, getModelToken } from '@nestjs/mongoose';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import {
-  closeInMongodConnection,
-  rootMongooseTestModule,
-} from 'src/test/utils/mongoTest.module';
-import { Notification, NotificationSchema } from '../notification.schema';
-import { Model } from 'mongoose';
+import { EntityManager } from '@mikro-orm/postgresql';
+import { getRepositoryToken } from '@mikro-orm/nestjs';
+import { NotificationRepository } from '../repositories/notification.repository';
+import { Notification } from '../entities/notification.entity';
 
 describe('NotificationService', () => {
   let service: NotificationService;
-  let notificationModel: Model<Notification>;
 
   const mockEventEmitter = {
     emit: jest.fn(),
   };
 
+  const mockEntityManager = {
+    persistAndFlush: jest.fn(),
+    getReference: jest.fn(),
+  };
+
+  const mockNotificationRepository = {
+    findOne: jest.fn(),
+    assign: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        rootMongooseTestModule(),
-        MongooseModule.forFeature([
-          { name: 'Notification', schema: NotificationSchema },
-        ]),
-      ],
       providers: [
         NotificationService,
+        {
+          provide: EntityManager,
+          useValue: mockEntityManager,
+        },
+        {
+          provide: getRepositoryToken(Notification),
+          useValue: mockNotificationRepository,
+        },
+        {
+          provide: NotificationRepository,
+          useValue: mockNotificationRepository,
+        },
         {
           provide: EventEmitter2,
           useValue: mockEventEmitter,
@@ -35,12 +47,6 @@ describe('NotificationService', () => {
     }).compile();
 
     service = module.get<NotificationService>(NotificationService);
-    notificationModel = module.get<Model<Notification>>(
-      getModelToken('Notification'),
-    );
-
-    // clear in memory db before each test
-    await notificationModel.deleteMany({});
 
     // clear events recorded before each test
     mockEventEmitter.emit.mockClear();
@@ -48,9 +54,5 @@ describe('NotificationService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
-  });
-
-  afterAll(async () => {
-    await closeInMongodConnection();
   });
 });

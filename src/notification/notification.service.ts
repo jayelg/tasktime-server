@@ -1,15 +1,7 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/createNotification.dto';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import { MemberInvitedEvent } from 'src/org/event/memberInvited.event';
-import { NotificationMemberInvitedEvent } from './event/notificationMemberInvited.event';
-import { NotificationDeletedEvent } from './event/notificationDeleted.event';
-import { NotificationDto } from './dto/notification.dto';
-import { EntityManager, Reference } from '@mikro-orm/core';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EntityManager } from '@mikro-orm/postgresql';
 import { Notification } from './entities/notification.entity';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { NotificationRepository } from './repositories/notification.repository';
@@ -54,7 +46,7 @@ export class NotificationService {
       const notification = await this.notificationRepository.findOne(
         notificationId,
       );
-      if (notification.user.unwrap().id === userId) {
+      if (notification.user.id === userId) {
         return notification;
       }
     } catch (error) {
@@ -67,7 +59,7 @@ export class NotificationService {
   ): Promise<Notification> {
     try {
       const notification = new Notification();
-      notification.user = Reference.createFromPK(User, notificationData.user);
+      notification.user = this.em.getReference(User, notificationData.user);
       notification.title = notificationData.title;
       notification.data = notificationData.data;
       this.em.persistAndFlush(notification);

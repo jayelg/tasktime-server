@@ -7,7 +7,6 @@ import { EntityManager } from '@mikro-orm/postgresql';
 import { Project } from './entities/project.entity';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { ProjectRepository } from './repositories/project.repository';
-import { Reference } from '@mikro-orm/core';
 import { Org } from 'src/org/entities/org.entity';
 import { User } from 'src/user/entities/user.entity';
 import { ProjectMember } from './entities/projectMember.entity';
@@ -22,7 +21,20 @@ export class ProjectService {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  async getProject(projectId: string) {
+  async getAllProjects(userId: string): Promise<Project[]> {
+    try {
+      const projectMembers =
+        await this.projectRepository.findProjectsByMemberId(userId);
+      const projectRefs = projectMembers.map(
+        (projectMember) => projectMember.project,
+      );
+      return await this.projectRepository.find(projectRefs);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getProject(projectId: string): Promise<Project> {
     try {
       return await this.projectRepository.findOne(projectId);
     } catch (error) {
@@ -34,13 +46,13 @@ export class ProjectService {
     userId: string,
     orgId: string,
     newProject: CreateProjectDto,
-  ) {
+  ): Promise<Project> {
     try {
-      const userRef = Reference.createFromPK(User, userId);
-      const orgRef = Reference.createFromPK(Org, orgId);
+      const userRef = this.em.getReference(User, userId);
+      const orgRef = this.em.getReference(Org, orgId);
       const project = new Project(userRef, orgRef, newProject.name);
       await this.em.persistAndFlush(project);
-      const projectRef = Reference.createFromPK(Project, project.id);
+      const projectRef = this.em.getReference(Project, project.id);
       const projectMember = new ProjectMember(
         userRef,
         projectRef,
@@ -53,7 +65,10 @@ export class ProjectService {
     }
   }
 
-  async updateProject(projectId: string, updates: UpdateProjectDto) {
+  async updateProject(
+    projectId: string,
+    updates: UpdateProjectDto,
+  ): Promise<Project> {
     try {
       const project = await this.projectRepository.findOne(projectId);
       this.projectRepository.assign(project, updates);
@@ -63,7 +78,7 @@ export class ProjectService {
     }
   }
 
-  async deleteProject(userId: string, projectId: string) {
+  async deleteProject(userId: string, projectId: string): Promise<undefined> {
     try {
       const projectMembers =
         await this.projectRepository.findMembersByProjectId(projectId);
@@ -79,7 +94,7 @@ export class ProjectService {
         new ProjectDeletedEvent(
           project.id,
           project.name,
-          project.org.unwrap().id,
+          project.org.id,
           new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
           userId,
         ),
@@ -89,17 +104,7 @@ export class ProjectService {
     }
   }
 
-  async getSelectedProjects(projectIds: string[]) {
-    try {
-      const qb = this.projectRepository.createQueryBuilder();
-      qb.where({ id: { $in: projectIds } });
-      return await qb.getResult();
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async getMember(userId: string, projectId: string) {
+  async getMember(userId: string, projectId: string): Promise<ProjectMember> {
     return await this.projectRepository.findProjectMember(userId, projectId);
   }
 }

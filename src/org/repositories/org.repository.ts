@@ -13,4 +13,10 @@ export class OrgRepository extends EntityRepository<Org> {
       org: orgId,
     });
   }
+
+  async findOrgsByMemberId(userId: string): Promise<OrgMember[]> {
+    return await this.em.find(OrgMember, {
+      member: userId,
+    });
+  }
 }

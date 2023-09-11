@@ -2,12 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { NewItemDto } from './dto/newItem.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ItemCreatedEvent } from './event/itemCreated.event';
-import { ItemDeletedEvent } from './event/itemDeleted.event';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { Item } from './entities/item.entity';
 import { ItemRepository } from './repositories/item.repository';
-import { Reference } from '@mikro-orm/core';
 import { User } from 'src/user/entities/user.entity';
 import { Project } from 'src/project/entities/project.entity';
 import { ItemMember } from './entities/itemMember.entity';
@@ -22,10 +20,14 @@ export class ItemService {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  async getItems(itemIds: string[]): Promise<Item[]> {
-    const qb = this.itemRepository.createQueryBuilder();
-    qb.where({ id: { $in: itemIds } });
-    return await qb.getResult();
+  async getAllItems(userId: string): Promise<Item[]> {
+    try {
+      const itemMembers = await this.itemRepository.findItemsByMemberId(userId);
+      const itemRefs = itemMembers.map((itemMember) => itemMember.item);
+      return await this.itemRepository.find(itemRefs);
+    } catch (error) {
+      throw error;
+    }
   }
 
   // todo add check user and role authorization
@@ -38,11 +40,11 @@ export class ItemService {
   }
 
   async createItem(userId: string, projectId: string, newItem: NewItemDto) {
-    const userRef = Reference.createFromPK(User, userId);
-    const projectRef = Reference.createFromPK(Project, projectId);
+    const userRef = this.em.getReference(User, userId);
+    const projectRef = this.em.getReference(Project, projectId);
     const item = new Item(userRef, projectRef, newItem.name);
     await this.em.persistAndFlush(item);
-    const itemRef = Reference.createFromPK(Item, item.id);
+    const itemRef = this.em.getReference(Item, item.id);
     const itemMember = new ItemMember(userRef, itemRef, ItemMemberRole.Owner);
     await this.em.persistAndFlush(itemMember);
     this.eventEmitter.emit(

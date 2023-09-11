@@ -2,8 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from '../../user/user.controller';
 import { UserService } from '../../user/user.service';
 import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
-import { createMockUserDto } from './factory/createMockUserDto.factory';
-import { UpdateUserRequestDto } from '../dto/updateUserRequest.dto';
+import { UpdateUserDto } from '../dto/updateUser.dto';
+import { User } from '../entities/user.entity';
 
 const mockUserService = {
   getUser: jest.fn(),
@@ -51,10 +51,9 @@ describe('UserController', () => {
       const mockRequest = {
         user: { id: mockUserId, email: mockEmail },
       } as UserRequestDto;
-      const expectedResult = createMockUserDto({
-        _id: mockUserId,
-        email: mockEmail,
-      });
+      const expectedResult = new User(mockEmail);
+      expectedResult.id = mockUserId;
+
       mockUserService.getUser.mockResolvedValue(expectedResult);
 
       const result = await controller.getProfile(mockRequest);
@@ -70,7 +69,7 @@ describe('UserController', () => {
       const mockRequest = {
         user: { id: mockUserId, email: mockEmail },
       } as UserRequestDto;
-      const mockUpdateUserData: UpdateUserRequestDto = {
+      const mockUpdateUserData: UpdateUserDto = {
         firstName: 'John',
         lastName: 'Grant',
       };
@@ -94,12 +93,10 @@ describe('UserController', () => {
         firstName: 'John',
         lastName: 'Grant',
       };
-      const expectedResult = createMockUserDto({
-        _id: mockUserId,
-        email: mockEmail,
-        firstName: mockUpdateUserData.firstName,
-        lastName: mockUpdateUserData.lastName,
-      });
+      const expectedResult = new User(mockEmail);
+      expectedResult.id = mockUserId;
+      expectedResult.firstName = mockUpdateUserData.firstName;
+      expectedResult.lastName = mockUpdateUserData.lastName;
       mockUserService.updateUser.mockResolvedValue(expectedResult);
 
       const result = await controller.updateUser(
@@ -142,49 +139,6 @@ describe('UserController', () => {
       expect(mockUserService.updateUser).toBeCalledWith(mockUserId, {
         disabled: false,
       });
-    });
-  });
-
-  describe('markNotificationRead', () => {
-    it('should call userService.removeUnreadNotifications with the request user id and notification id as props', async () => {
-      const mockUserId = 'mock-user-id';
-      const mockEmail = 'mock@email.com';
-      const mockRequest = {
-        user: { id: mockUserId, email: mockEmail },
-      } as UserRequestDto;
-      const mockNotification = 'notification-id-3';
-      mockUserService.removeUnreadNotification.mockResolvedValue(undefined);
-
-      await controller.markNotificationRead(mockRequest, mockNotification);
-
-      expect(mockUserService.removeUnreadNotification).toHaveBeenCalledWith(
-        mockUserId,
-        mockNotification,
-      );
-    });
-  });
-
-  describe('inviteUserToOrg', () => {
-    it('should call userService.handleInvitedOrgMember with the request user id, org id, and invite data as props', async () => {
-      const mockUserId = 'mock-user-id';
-      const mockEmail = 'mock@email.com';
-      const mockRequest = {
-        user: { id: mockUserId, email: mockEmail },
-      } as UserRequestDto;
-      const mockOrgId = 'org-id-1';
-      const mockinviteData = {
-        email: 'invitee@email.com',
-        role: 'orgAdmin',
-      };
-      mockUserService.handleInvitedOrgMember.mockResolvedValue(undefined);
-
-      await controller.inviteUserToOrg(mockRequest, mockOrgId, mockinviteData);
-
-      expect(mockUserService.handleInvitedOrgMember).toHaveBeenCalledWith(
-        mockUserId,
-        mockOrgId,
-        mockinviteData,
-      );
     });
   });
 });

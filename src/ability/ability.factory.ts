@@ -73,52 +73,56 @@ export class AbilityFactory {
             orgMember.role === OrgMemberRole.Admin
           ) {
             can(Action.Read, Org);
-          }
-          if (projectId) {
-            project = await this.projectService.getProject(projectId);
-            // check project is in org
-            if (project || project.org === orgId) {
-              if (!project.isHidden) {
-                can(Action.Read, Project);
-              }
-              const projectMember = await this.projectService.getMember(
-                userId,
-                projectId,
-              );
-              if (projectMember) {
-                if (projectMember.role === ProjectMemberRole.Admin) {
-                  can(Action.Manage, Project);
-                }
-                if (
-                  projectMember.role === ProjectMemberRole.Member ||
-                  projectMember.role === ProjectMemberRole.Admin
-                ) {
-                  can(Action.Create, Item);
-                }
-                if (projectMember.role === ProjectMemberRole.Viewer) {
+            if (projectId) {
+              project = await this.projectService.getProject(projectId);
+              // check project is in org
+              if (project && project.org.id === orgId) {
+                if (!project.isHidden) {
                   can(Action.Read, Project);
                 }
-                if (itemId) {
-                  item = await this.itemService.getItem(itemId);
-                  // check item is in project
-                  if (item || item.project === projectId) {
-                    const itemMember = await this.itemService.getMember(
-                      userId,
-                      itemId,
-                    );
-                    if (itemMember) {
-                      if (itemMember.role === ItemMemberRole.Owner) {
-                        can(Action.Manage, Item);
-                        can(Action.Update, Item);
-                      }
-                      if (itemMember.role === ItemMemberRole.Member) {
-                        can(Action.Update, Item);
-                      }
-                      if (itemMember.role === ItemMemberRole.Reviewer) {
-                        can(Action.Review, Item);
-                      }
-                      if (itemMember.role === ItemMemberRole.Viewer) {
-                        can(Action.Read, Item);
+                const projectMember = await this.projectService.getMember(
+                  userId,
+                  projectId,
+                );
+                if (projectMember) {
+                  if (projectMember.role === ProjectMemberRole.Admin) {
+                    can(Action.Manage, Project);
+                  }
+                  if (
+                    projectMember.role === ProjectMemberRole.Member ||
+                    projectMember.role === ProjectMemberRole.Admin
+                  ) {
+                    can(Action.Create, Item);
+                  }
+                  if (
+                    projectMember.role === ProjectMemberRole.Viewer ||
+                    projectMember.role === ProjectMemberRole.Member ||
+                    projectMember.role === ProjectMemberRole.Admin
+                  ) {
+                    can(Action.Read, Project);
+                    if (itemId) {
+                      item = await this.itemService.getItem(itemId);
+                      // check item is in project
+                      if (item && item.project.id === projectId) {
+                        const itemMember = await this.itemService.getMember(
+                          userId,
+                          itemId,
+                        );
+                        if (itemMember) {
+                          if (itemMember.role === ItemMemberRole.Owner) {
+                            can(Action.Manage, Item);
+                            can(Action.Update, Item);
+                          }
+                          if (itemMember.role === ItemMemberRole.Member) {
+                            can(Action.Update, Item);
+                          }
+                          if (itemMember.role === ItemMemberRole.Reviewer) {
+                            can(Action.Review, Item);
+                          }
+                          if (itemMember.role === ItemMemberRole.Viewer) {
+                            can(Action.Read, Item);
+                          }
+                        }
                       }
                     }
                   }

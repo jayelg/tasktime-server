@@ -15,16 +15,16 @@ export class Item extends CustomBaseEntity {
   [EntityRepositoryType]?: ItemRepository;
 
   @ManyToOne(() => Project)
-  project: Reference<Project>;
+  project: Project;
 
   @ManyToOne(() => Item, { nullable: true })
-  parentItem?: Reference<Item>;
+  parentItem?: Item;
 
   @Property()
   name = 'New Item';
 
   @ManyToOne(() => User)
-  creator: Reference<User>;
+  creator: User;
 
   @Property()
   description = '';
@@ -41,11 +41,7 @@ export class Item extends CustomBaseEntity {
   @Property()
   colour = '';
 
-  constructor(
-    user: Reference<User>,
-    project: Reference<Project>,
-    name: string,
-  ) {
+  constructor(user: User, project: Project, name: string) {
     super();
     this.creator = user;
     this.project = project;

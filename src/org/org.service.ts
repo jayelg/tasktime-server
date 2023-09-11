@@ -10,7 +10,6 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { Org } from './entities/org.entity';
 import { OrgMember } from './entities/orgMember.entity';
 import { User } from 'src/user/entities/user.entity';
-import { Reference } from '@mikro-orm/core';
 import { OrgMemberRole } from './enum/orgMemberRole.enum';
 
 @Injectable()
@@ -22,9 +21,11 @@ export class OrgService {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  async getOrgs(userId: string, orgIds: string[]): Promise<Org[]> {
+  async getAllOrgs(userId: string): Promise<Org[]> {
     try {
-      return await this.orgRepository.find({ id: { $in: orgIds } });
+      const orgMembers = await this.orgRepository.findOrgsByMemberId(userId);
+      const orgRefs = orgMembers.map((orgMember) => orgMember.org);
+      return await this.orgRepository.find(orgRefs);
     } catch (error) {
       throw error;
     }
@@ -42,8 +43,8 @@ export class OrgService {
     try {
       const org = new Org(newOrg.name);
       await this.em.persistAndFlush(org);
-      const userRef = Reference.createFromPK(User, userId);
-      const orgRef = Reference.createFromPK(Org, org.id);
+      const userRef = this.em.getReference(User, userId);
+      const orgRef = this.em.getReference(Org, org.id);
       const orgMember = new OrgMember(userRef, orgRef, OrgMemberRole.Admin);
       await this.em.persistAndFlush(orgMember);
       this.eventEmitter.emit(
@@ -67,7 +68,7 @@ export class OrgService {
     }
   }
 
-  async deleteOrg(orgId: string) {
+  async deleteOrg(orgId: string): Promise<undefined> {
     try {
       const orgMembers = await this.orgRepository.findMembersByOrgId(orgId);
       await this.em.removeAndFlush(orgMembers);
@@ -81,7 +82,11 @@ export class OrgService {
     }
   }
 
-  async removeMember(userId: string, orgId: string, memberId: string) {
+  async removeMember(
+    userId: string,
+    orgId: string,
+    memberId: string,
+  ): Promise<undefined> {
     try {
       const orgMember = await this.orgRepository.findOrgMember(memberId, orgId);
       if (!orgMember) {
@@ -95,14 +100,14 @@ export class OrgService {
 
   // Emit event to be accepted by userService
   // userService should then add org to user
-  async acceptInvite(userId: string, orgId: string) {
+  async acceptInvite(userId: string, orgId: string): Promise<undefined> {
     this.eventEmitter.emit(
       'org.inviteAccepted',
       new OrgInviteAcceptedEvent(userId, orgId),
     );
   }
 
-  async getMember(userId: string, orgId: string) {
+  async getMember(userId: string, orgId: string): Promise<OrgMember> {
     return await this.orgRepository.findOrgMember(userId, orgId);
   }
 }

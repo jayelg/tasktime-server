@@ -14,10 +14,10 @@ export class Message extends CustomBaseEntity {
   [EntityRepositoryType]?: MessageRepository;
 
   @ManyToOne(() => User)
-  sender: Reference<User>;
+  sender: User;
 
   @ManyToOne(() => User)
-  recipient: Reference<User>;
+  recipient: User;
 
   @Property()
   read = false;

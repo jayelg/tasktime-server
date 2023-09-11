@@ -3,7 +3,6 @@ import {
   EntityRepositoryType,
   ManyToOne,
   Property,
-  Reference,
 } from '@mikro-orm/core';
 import { CustomBaseEntity } from '../../shared/entities/customBase.entity';
 import { User } from '../../user/entities/user.entity';
@@ -14,7 +13,7 @@ export class Notification extends CustomBaseEntity {
   [EntityRepositoryType]?: NotificationRepository;
 
   @ManyToOne(() => User)
-  user: Reference<User>;
+  user: User;
 
   @Property()
   read = false;
