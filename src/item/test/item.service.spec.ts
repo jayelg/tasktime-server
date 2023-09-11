@@ -1,27 +1,48 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Item, ItemSchema } from '../item.schema';
 import { ItemService } from '../item.service';
-import { rootMongooseTestModule } from 'src/test/utils/mongoTest.module';
-import { MongooseModule, getModelToken } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { EntityManager } from '@mikro-orm/postgresql';
+import { getRepositoryToken } from '@mikro-orm/nestjs';
+import { Item } from '../entities/item.entity';
+import { ItemRepository } from '../repositories/item.repository';
+import { Project } from 'src/project/entities/project.entity';
+import { User } from 'src/user/entities/user.entity';
+import { Org } from 'src/org/entities/org.entity';
+import { NewItemDto } from '../dto/newItem.dto';
 
 describe('ItemService', () => {
   let service: ItemService;
-  let itemModel: Model<Item>;
 
   const mockEventEmitter = {
     emit: jest.fn(),
   };
 
+  const mockEntityManager = {
+    persistAndFlush: jest.fn(),
+    getReference: jest.fn(),
+  };
+
+  const mockItemRepository = {
+    findOne: jest.fn(),
+    assign: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        rootMongooseTestModule(),
-        MongooseModule.forFeature([{ name: 'Item', schema: ItemSchema }]),
-      ],
       providers: [
         ItemService,
+        {
+          provide: EntityManager,
+          useValue: mockEntityManager,
+        },
+        {
+          provide: getRepositoryToken(Item),
+          useValue: mockItemRepository,
+        },
+        {
+          provide: ItemRepository,
+          useValue: mockItemRepository,
+        },
         {
           provide: EventEmitter2,
           useValue: mockEventEmitter,
@@ -30,10 +51,6 @@ describe('ItemService', () => {
     }).compile();
 
     service = module.get<ItemService>(ItemService);
-    itemModel = module.get<Model<Item>>(getModelToken('Item'));
-
-    // clear in memory db before each test
-    await itemModel.deleteMany({});
 
     // clear events recorded before each test
     mockEventEmitter.emit.mockClear();
@@ -41,5 +58,23 @@ describe('ItemService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('createItem', () => {
+    it('should return a item', async () => {
+      const userId = 'mock-user-id';
+      const projectId = 'mock-projectId-id';
+      const newProject = new NewItemDto();
+      newProject.name = 'mock-project-name';
+      const user = new User('mock@email.com');
+      const org = new Org('mock org name');
+      const project = new Project(user, org, 'mock org name');
+      const expectedResult = new Item(user, project, newProject.name);
+
+      const result = await service.createItem(userId, projectId, newProject);
+
+      expect(result).toBeInstanceOf(Item);
+      expect(result.name).toEqual(expectedResult.name);
+    });
   });
 });
