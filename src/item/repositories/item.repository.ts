@@ -13,4 +13,10 @@ export class ItemRepository extends EntityRepository<Item> {
       item: itemId,
     });
   }
+
+  async findItemsByMemberId(userId: string): Promise<ItemMember[]> {
+    return await this.em.find(ItemMember, {
+      member: userId,
+    });
+  }
 }
