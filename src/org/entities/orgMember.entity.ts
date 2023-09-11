@@ -1,10 +1,4 @@
-import {
-  Entity,
-  Enum,
-  ManyToOne,
-  PrimaryKey,
-  Reference,
-} from '@mikro-orm/core';
+import { Entity, Enum, ManyToOne, PrimaryKey } from '@mikro-orm/core';
 import { Org } from './org.entity';
 import { User } from '../../user/entities/user.entity';
 import { OrgMemberRole } from '../enum/orgMemberRole.enum';
@@ -15,15 +9,15 @@ export class OrgMember {
   id: string;
 
   @ManyToOne(() => Org)
-  org: Reference<Org>;
+  org: Org;
 
   @ManyToOne(() => User)
-  member: Reference<User>;
+  member: User;
 
   @Enum(() => OrgMemberRole)
   role: OrgMemberRole;
 
-  constructor(user: Reference<User>, org: Reference<Org>, role: OrgMemberRole) {
+  constructor(user: User, org: Org, role: OrgMemberRole) {
     this.org = org;
     this.member = user;
     this.role = role;

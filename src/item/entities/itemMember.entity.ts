@@ -15,19 +15,15 @@ export class ItemMember {
   id: string;
 
   @ManyToOne(() => Item)
-  item: Reference<Item>;
+  item: Item;
 
   @ManyToOne(() => User)
-  member: Reference<User>;
+  member: User;
 
   @Enum(() => ItemMemberRole)
   role: ItemMemberRole;
 
-  constructor(
-    user: Reference<User>,
-    item: Reference<Item>,
-    role: ItemMemberRole,
-  ) {
+  constructor(user: User, item: Item, role: ItemMemberRole) {
     this.item = item;
     this.member = user;
     this.role = role;

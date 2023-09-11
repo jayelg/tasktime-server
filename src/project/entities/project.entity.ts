@@ -14,14 +14,14 @@ import { CustomBaseEntity } from '../../shared/entities/customBase.entity';
 export class Project extends CustomBaseEntity {
   [EntityRepositoryType]?: ProjectRepository;
 
-  @ManyToOne(() => Org, { ref: true })
-  org: Reference<Org>;
+  @ManyToOne(() => Org)
+  org: Org;
 
   @Property()
   name = 'New Project';
 
   @ManyToOne(() => User)
-  creator: Reference<User>;
+  creator: User;
 
   @Property()
   description = '';
@@ -35,7 +35,7 @@ export class Project extends CustomBaseEntity {
   @Property({ type: 'boolean' })
   isHidden = false;
 
-  constructor(user: Reference<User>, org: Reference<Org>, name: string) {
+  constructor(user: User, org: Org, name: string) {
     super();
     this.creator = user;
     this.org = org;
