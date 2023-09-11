@@ -22,16 +22,23 @@ import {
   UpdateOrgAbility,
   DeleteOrgAbility,
 } from 'src/ability/ability.objects';
+import { OrgMember } from './entities/orgMember.entity';
 
 @Controller('org')
 @ApiTags('org')
 export class OrgController {
   constructor(private readonly orgService: OrgService) {}
 
-  @Post()
-  @CheckAbilities(new CreateOrgAbility())
-  async createOrg(@Req() req, @Body() newOrg: CreateOrgDto): Promise<Org> {
-    return await this.orgService.createOrg(req.user.id, newOrg);
+  @Get()
+  @ApiOperation({ summary: 'Get an array of organizations' })
+  @ApiResponse({
+    status: 200,
+    description: 'The organization...',
+    type: OrgDto,
+  })
+  @CheckAbilities(new ViewOrgAbility())
+  async getAllOrgs(@Req() req: UserRequestDto): Promise<Org[]> {
+    return await this.orgService.getAllOrgs(req.user.id);
   }
 
   @Get(':orgId')
@@ -43,6 +50,12 @@ export class OrgController {
     @Param('orgId') orgId: string,
   ): Promise<Org> {
     return await this.orgService.getOrg(orgId);
+  }
+
+  @Post()
+  @CheckAbilities(new CreateOrgAbility())
+  async createOrg(@Req() req, @Body() newOrg: CreateOrgDto): Promise<Org> {
+    return await this.orgService.createOrg(req.user.id, newOrg);
   }
 
   // todo:
@@ -60,7 +73,7 @@ export class OrgController {
   @CheckAbilities(new DeleteOrgAbility())
   @Delete(':orgId')
   async deleteOrg(@Req() req: UserRequestDto, @Param('orgId') orgId: string) {
-    return await this.orgService.deleteOrg(orgId);
+    await this.orgService.deleteOrg(orgId);
   }
 
   /*    :orgId/member    */
