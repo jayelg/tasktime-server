@@ -1,30 +1,47 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProjectService } from '../project.service';
-import { Project, ProjectSchema } from '../project.schema';
-import { MongooseModule, getModelToken } from '@nestjs/mongoose';
-import {
-  closeInMongodConnection,
-  rootMongooseTestModule,
-} from 'src/test/utils/mongoTest.module';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Model } from 'mongoose';
+import { EntityManager } from '@mikro-orm/postgresql';
+import { getRepositoryToken } from '@mikro-orm/nestjs';
+import { Project } from '../entities/project.entity';
+import { ProjectRepository } from '../repositories/project.repository';
+import { CreateProjectDto } from '../dto/createProject.dto';
+import { Org } from 'src/org/entities/org.entity';
+import { User } from 'src/user/entities/user.entity';
 
 describe('ProjectService', () => {
   let service: ProjectService;
-  let projectModel: Model<Project>;
 
   const mockEventEmitter = {
     emit: jest.fn(),
   };
 
+  const mockEntityManager = {
+    persistAndFlush: jest.fn(),
+    getReference: jest.fn(),
+  };
+
+  const mockProjectRepository = {
+    findOne: jest.fn(),
+    assign: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        rootMongooseTestModule(),
-        MongooseModule.forFeature([{ name: 'Project', schema: ProjectSchema }]),
-      ],
       providers: [
         ProjectService,
+        {
+          provide: EntityManager,
+          useValue: mockEntityManager,
+        },
+        {
+          provide: getRepositoryToken(Project),
+          useValue: mockProjectRepository,
+        },
+        {
+          provide: ProjectRepository,
+          useValue: mockProjectRepository,
+        },
         {
           provide: EventEmitter2,
           useValue: mockEventEmitter,
@@ -33,10 +50,6 @@ describe('ProjectService', () => {
     }).compile();
 
     service = module.get<ProjectService>(ProjectService);
-    projectModel = module.get<Model<Project>>(getModelToken('Project'));
-
-    // clear in memory db before each test
-    await projectModel.deleteMany({});
 
     // clear events recorded before each test
     mockEventEmitter.emit.mockClear();
@@ -46,7 +59,20 @@ describe('ProjectService', () => {
     expect(service).toBeDefined();
   });
 
-  afterAll(async () => {
-    await closeInMongodConnection();
+  describe('createProject', () => {
+    it('should return a project', async () => {
+      const userId = 'mock-user-id';
+      const orgId = 'mock-org-id';
+      const newProject = new CreateProjectDto();
+      newProject.name = 'mock-project-name';
+      const user = new User('mock@email.com');
+      const org = new Org('mock org name');
+      const expectedResult = new Project(user, org, newProject.name);
+
+      const result = await service.createProject(userId, orgId, newProject);
+
+      expect(result).toBeInstanceOf(Project);
+      expect(result.name).toEqual(expectedResult.name);
+    });
   });
 });
