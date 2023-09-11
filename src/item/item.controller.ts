@@ -21,6 +21,7 @@ import {
   UpdateItemAbility,
   ViewItemAbility,
 } from 'src/ability/ability.objects';
+import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
 
 @Controller('org/:orgId/project/:projectId/item')
 @ApiTags('item')
@@ -29,8 +30,8 @@ export class ItemController {
 
   @Get()
   @CheckAbilities(new ViewItemAbility())
-  async getAllItems(@Body() itemIds: string[]) {
-    return this.itemService.getItems(itemIds);
+  async getAllItems(@Req() req: UserRequestDto): Promise<Item[]> {
+    return this.itemService.getAllItems(req.user.id);
   }
 
   @Get(':itemId')
@@ -42,7 +43,7 @@ export class ItemController {
   @Post()
   @CheckAbilities(new CreateItemAbility())
   async createItem(
-    @Req() req,
+    @Req() req: UserRequestDto,
     @Param('projectId') projectId: string,
     @Body() newItem: NewItemDto,
   ) {
