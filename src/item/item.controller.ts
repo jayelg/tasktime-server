@@ -7,6 +7,7 @@ import {
   Param,
   Body,
   Req,
+  Query,
 } from '@nestjs/common';
 import { ItemService } from './item.service';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -22,11 +23,19 @@ import {
   ViewItemAbility,
 } from 'src/ability/ability.objects';
 import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
+import { ItemDescendantsDto } from './dto/itemDescendants.dto';
+import { ItemAncestryService } from './itemAncestry.service';
+import { ItemAncestryDto } from './dto/itemAncestry.dto';
+import { UpdateItemAncestryDto } from './dto/updateItemAncestry.dto';
+import { ItemAncestry } from './entities/itemAncestry.entity';
 
 @Controller('org/:orgId/project/:projectId/item')
 @ApiTags('item')
 export class ItemController {
-  constructor(private itemService: ItemService) {}
+  constructor(
+    private itemService: ItemService,
+    private itemAncestryService: ItemAncestryService,
+  ) {}
 
   @Get()
   @CheckAbilities(new ViewItemAbility())
@@ -63,5 +72,36 @@ export class ItemController {
   @CheckAbilities(new DeleteItemAbility())
   async deleteItem(@Param('itemId') itemId: string) {
     return await this.itemService.deleteItem(itemId);
+  }
+
+  // Ancestry Related
+  @Get(':itemId/descendants')
+  @CheckAbilities(new ViewItemAbility())
+  async getItemDescendants(
+    @Param('itemId') itemId: string,
+    @Query('depth') depth?: string,
+  ): Promise<ItemDescendantsDto> {
+    return this.itemAncestryService.getItemDescendants(
+      itemId,
+      parseInt(depth, 10),
+    );
+  }
+
+  @Post('relationship')
+  @CheckAbilities(new CreateItemAbility())
+  async createItemAncestry(
+    @Body() newItem: ItemAncestryDto,
+  ): Promise<ItemAncestry> {
+    return await this.itemAncestryService.createItemAncestry(newItem);
+  }
+
+  @Patch('relationship')
+  @CheckAbilities(new CreateItemAbility())
+  async updateItemAncestry(
+    @Body() updatedItemRelationships: UpdateItemAncestryDto,
+  ): Promise<ItemAncestry> {
+    return await this.itemAncestryService.updateItemAncestry(
+      updatedItemRelationships,
+    );
   }
 }
