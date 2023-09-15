@@ -1,10 +1,10 @@
 import {
   IsString,
   IsNotEmpty,
-  IsArray,
   IsNumber,
   IsOptional,
   IsBoolean,
+  IsUUID,
 } from 'class-validator';
 
 export class UpdateItemDto {
@@ -41,22 +41,6 @@ export class UpdateItemDto {
   colour: string;
 
   @IsOptional()
-  @IsArray()
-  nestedItemIds: string[];
-
-  @IsOptional()
-  @IsString()
-  parentItemId: string;
-
-  @IsOptional()
-  @IsString()
-  predecessorItemId: string;
-
-  @IsOptional()
-  @IsString()
-  successorItemId: string;
-
-  @IsOptional()
-  @IsArray()
-  itemObjects: object[];
+  @IsUUID()
+  hostItem?: string;
 }
