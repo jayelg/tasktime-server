@@ -4,6 +4,7 @@ import {
   IsArray,
   IsNumber,
   IsOptional,
+  IsUUID,
 } from 'class-validator';
 
 export class NewItemDto {
@@ -26,4 +27,8 @@ export class NewItemDto {
   @IsOptional()
   @IsString()
   colour?: string;
+
+  @IsOptional()
+  @IsUUID()
+  hostItem?: string;
 }
