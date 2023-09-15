@@ -9,6 +9,7 @@ import { Project } from './project/entities/project.entity';
 import { ProjectMember } from './project/entities/projectMember.entity';
 import { CustomBaseEntity } from './shared/entities/customBase.entity';
 import { Notification } from './notification/entities/notification.entity';
+import { ItemAncestry } from './item/entities/itemAncestry.entity';
 
 export default (configService: ConfigService): Options => {
   return {
@@ -22,6 +23,7 @@ export default (configService: ConfigService): Options => {
       ProjectMember,
       Item,
       ItemMember,
+      ItemAncestry,
       Notification,
     ],
     type: 'postgresql',
