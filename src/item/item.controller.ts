@@ -25,8 +25,7 @@ import {
 import { UserRequestDto } from 'src/auth/dto/userRequest.dto';
 import { ItemDescendantsDto } from './dto/itemDescendants.dto';
 import { ItemAncestryService } from './itemAncestry.service';
-import { ItemAncestryDto } from './dto/itemAncestry.dto';
-import { UpdateItemAncestryDto } from './dto/updateItemAncestry.dto';
+import { CreateItemAncestryDto } from './dto/createItemAncestry.dto';
 import { ItemAncestry } from './entities/itemAncestry.entity';
 
 @Controller('org/:orgId/project/:projectId/item')
@@ -90,18 +89,16 @@ export class ItemController {
   @Post('relationship')
   @CheckAbilities(new CreateItemAbility())
   async createItemAncestry(
-    @Body() newItem: ItemAncestryDto,
+    @Body() newItem: CreateItemAncestryDto,
   ): Promise<ItemAncestry> {
     return await this.itemAncestryService.createItemAncestry(newItem);
   }
 
-  @Patch('relationship')
-  @CheckAbilities(new CreateItemAbility())
-  async updateItemAncestry(
-    @Body() updatedItemRelationships: UpdateItemAncestryDto,
-  ): Promise<ItemAncestry> {
-    return await this.itemAncestryService.updateItemAncestry(
-      updatedItemRelationships,
-    );
+  @Delete('relationship/:itemAncestryId')
+  @CheckAbilities(new DeleteItemAbility())
+  async deleteItemAncestry(
+    @Param('itemAncestryId') itemAncestryId: string,
+  ): Promise<undefined> {
+    await this.itemAncestryService.deleteItemAncestry(itemAncestryId);
   }
 }
