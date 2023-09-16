@@ -1,6 +1,15 @@
-import { IsNotEmpty, IsArray } from 'class-validator';
+import { IsNotEmpty, IsArray, IsUUID } from 'class-validator';
 import { Item } from '../entities/item.entity';
-import { ItemAncestryDto } from './itemAncestry.dto';
+
+class ItemAncestryIds {
+  @IsUUID()
+  @IsNotEmpty()
+  ancestorItemId: string;
+
+  @IsUUID()
+  @IsNotEmpty()
+  descendantItemId: string;
+}
 
 export class ItemDescendantsDto {
   @IsArray()
@@ -9,5 +18,5 @@ export class ItemDescendantsDto {
 
   @IsArray()
   @IsNotEmpty()
-  relationships: Array<ItemAncestryDto>;
+  relationships: Array<ItemAncestryIds>;
 }
