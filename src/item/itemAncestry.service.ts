@@ -1,13 +1,16 @@
 import { EntityManager } from '@mikro-orm/postgresql';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Item } from './entities/item.entity';
 import { ItemAncestryRepository } from './repositories/itemAncestry.repository';
 import { ItemDescendantsDto } from './dto/itemDescendants.dto';
-import { UpdateItemAncestryDto } from './dto/updateItemAncestry.dto';
 import { ItemAncestry } from './entities/itemAncestry.entity';
-import { ItemAncestryDto } from './dto/itemAncestry.dto';
+import { CreateItemAncestryDto } from './dto/createItemAncestry.dto';
 
 @Injectable()
 export class ItemAncestryService {
@@ -57,7 +60,7 @@ export class ItemAncestryService {
 
     const relationshipsData = await this.em.execute(relationshipQuery);
     const relationships = relationshipsData.map((record) => {
-      const relationship = new ItemAncestryDto();
+      const relationship = new CreateItemAncestryDto();
       relationship.ancestorItemId = record.ancestor_id;
       relationship.descendantItemId = record.descendant_id;
       return relationship;
@@ -79,19 +82,71 @@ export class ItemAncestryService {
     return { items, relationships };
   }
 
-  async createItemAncestry(
-    newAncestry: ItemAncestryDto,
+  // check all rules for relationships are met
+  // checks should be ordered in ascending order of processing cost.
+  private async validateRelation(
+    ancestorId: string,
+    descendantId: string,
   ): Promise<ItemAncestry> {
     try {
-      const ancestor = await this.em.findOne(Item, newAncestry.ancestorItemId);
-      const descendant = await this.em.findOne(
-        Item,
+      const ancestor = await this.em.findOne(Item, ancestorId);
+      const descendant = await this.em.findOne(Item, descendantId);
+      if (!ancestor || !descendant) {
+        throw new NotFoundException('Ancestor or Descendant not found');
+      }
+      if (ancestor.hostItem !== descendant.hostItem) {
+        throw new ForbiddenException(
+          'Ancestor and Descendant are not in the same scope',
+        );
+      }
+      const hasCycle = await this.isCyclePresentDFS(ancestorId, descendantId);
+      if (hasCycle) {
+        throw new ForbiddenException(
+          'new relationship will cause a cycle which is not allowed.',
+        );
+      }
+      return new ItemAncestry(ancestor, descendant);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  private async isCyclePresentDFS(
+    ancestorId: string,
+    descendantId: string,
+    visited: Set<string> = new Set(),
+  ): Promise<boolean> {
+    visited.add(ancestorId);
+
+    const relationships = await this.itemAncestryRepository.find({
+      descendant: ancestorId,
+    });
+
+    for (const relationship of relationships) {
+      const ancestor = relationship.ancestor;
+
+      if (ancestor.id === descendantId) {
+        return true;
+      }
+
+      if (!visited.has(ancestor.id)) {
+        if (await this.isCyclePresentDFS(ancestor.id, descendantId, visited)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  async createItemAncestry(
+    newAncestry: CreateItemAncestryDto,
+  ): Promise<ItemAncestry> {
+    try {
+      const itemAncestry = await this.validateRelation(
+        newAncestry.ancestorItemId,
         newAncestry.descendantItemId,
       );
-      if (!ancestor || !descendant) {
-        throw new Error('Ancestor or Descendant not found');
-      }
-      const itemAncestry = new ItemAncestry(ancestor, descendant);
       await this.em.persistAndFlush(itemAncestry);
       return itemAncestry;
     } catch (error) {
@@ -99,29 +154,15 @@ export class ItemAncestryService {
     }
   }
 
-  async updateItemAncestry(
-    updates: UpdateItemAncestryDto,
-  ): Promise<ItemAncestry> {
+  async deleteItemAncestry(itemAncestryId: string): Promise<undefined> {
     try {
-      if (updates.oldRelation) {
-        const oldAncestry = await this.itemAncestryRepository.findOne({
-          ancestor: updates.oldRelation.ancestorItemId,
-          descendant: updates.oldRelation.descendantItemId,
-        });
-
-        if (oldAncestry) {
-          await this.itemAncestryRepository.removeAndFlush(oldAncestry);
-        }
+      const itemAncestry = this.itemAncestryRepository.findOne(itemAncestryId);
+      if (!itemAncestry) {
+        throw new NotFoundException(
+          `ItemAncestry with ID ${itemAncestryId} not found`,
+        );
       }
-
-      const newAncestry = this.itemAncestryRepository.create({
-        ancestor: updates.newRelation.ancestorItemId,
-        descendant: updates.newRelation.descendantItemId,
-      });
-
-      await this.em.persistAndFlush(newAncestry);
-
-      return newAncestry;
+      await this.em.removeAndFlush(itemAncestry);
     } catch (error) {
       throw error;
     }
