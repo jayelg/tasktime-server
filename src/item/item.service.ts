@@ -11,6 +11,8 @@ import { Project } from 'src/project/entities/project.entity';
 import { ItemMember } from './entities/itemMember.entity';
 import { ItemMemberRole } from './enum/itemMemberRole.enum';
 
+import { UpdateItemDto } from './dto/updateItem.dto';
+
 @Injectable()
 export class ItemService {
   constructor(
@@ -39,7 +41,11 @@ export class ItemService {
     }
   }
 
-  async createItem(userId: string, projectId: string, newItem: NewItemDto) {
+  async createItem(
+    userId: string,
+    projectId: string,
+    newItem: NewItemDto,
+  ): Promise<Item> {
     const userRef = this.em.getReference(User, userId);
     const projectRef = this.em.getReference(Project, projectId);
     const item = new Item(userRef, projectRef, newItem.name);
@@ -54,7 +60,7 @@ export class ItemService {
     return item;
   }
 
-  async updateItem(itemId: string, updates: object) {
+  async updateItem(itemId: string, updates: UpdateItemDto): Promise<Item> {
     try {
       const item = await this.itemRepository.findOne(itemId);
       this.itemRepository.assign(item, updates);
@@ -65,7 +71,7 @@ export class ItemService {
     }
   }
 
-  async deleteItem(itemId: string) {
+  async deleteItem(itemId: string): Promise<undefined> {
     try {
       const itemMembers = await this.itemRepository.findMembersByItemId(itemId);
       await this.em.removeAndFlush(itemMembers);
@@ -89,7 +95,7 @@ export class ItemService {
     }
   }
 
-  async getMember(userId: string, itemId: string) {
+  async getMember(userId: string, itemId: string): Promise<ItemMember> {
     return await this.itemRepository.findItemMember(userId, itemId);
   }
 }
