@@ -20,6 +20,12 @@ written in [Typescript](https://www.typescriptlang.org/)
 
 [Swagger](https://swagger.io/) - API Documentation
 
+## Database ERD (WIP)
+
+The below link is the working design for the database schema.
+
+[Entity Relationship Diagram](https://viewer.diagrams.net/?tags=%7B%7D&highlight=0000ff&layers=1&nav=1&title=Tasktime%20DB%20Schema%20ERD.drawio#Uhttps%3A%2F%2Fraw.githubusercontent.com%2Fjayelg%2Ftasktime-server%2Fmain%2Fdocuments%2FTasktime%2520DB%2520Schema%2520ERD.drawio)
+
 ## First Prototype
 
 I initially started building this using express js which can be viewed at the following branch of this repo.
