@@ -10,7 +10,7 @@ async function bootstrap() {
 
   const appName = configService.get<string>('APP_NAME');
   const appDescription = configService.get<string>('APP_DESCRIPTION');
-  const port = configService.get<string>('PORT');
+  const port = configService.get<string>('PORT', '8080'); // env or default
   const serverUrl = configService.get<string>('SERVER_URL');
   const customBasePath = 'v1';
 
