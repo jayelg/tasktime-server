@@ -1,4 +1,4 @@
-import { MailerService } from '@nestjs-modules/mailer';
+import { MailerService } from './mailer.service';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OnEvent } from '@nestjs/event-emitter';
