@@ -34,23 +34,27 @@ I initially started building this using express js which can be viewed at the fo
 
 ## Running the server
 
-Ensure Node.js and npm package manager is installed.
+### Clone Repo
 
-Pull the project from git.
+Requirements: Node.js and npm package manager installed.
 
 create a .env file in the root directory of the project with the following parameters.
 
 ```bash
 APP_NAME = 'tasktime server'
-SERVER_URL = http://localhost
-DATABASE_URL = mongodb+srv://user:password@somedatabase.mongodb.net/
-PORT = 3000
-JWT_SECRET_KEY = dc3ad6lkrrZ-generatedLongSecretKey-e3iicl60sxhh
-SMTP_URL = smtp.sendgridOrMailgun.com
+APP_DESCRIPTION = 'The tasktime backend service provides a REST API with validation, authentication and authorization for the tasktime app.'
+SERVER_URL = http://localhost:3010
+JWT_SECRET_KEY = generated_long_secret_key
+DB_NAME = tasktimedev
+DB_HOST = db_host_URL
+DB_PORT = 5432
+DB_USER = postgres
+DB_PASS = dbpassword
+SMTP_URL = smtp.mailprovider.com
 SMTP_PORT = 587
-SMTP_USER = postmaster@mail.com
-SMTP_PASS = dc3ad6lkrrZ-SMTPPassword-e3iicl60sxhh
-SMTP_FROM_ADDRESS = support@mail.com
+SMTP_USER = postmaster@site.com
+SMTP_PASS = SMTPPassword
+SMTP_FROM_ADDRESS = support@site.com
 ```
 
 Use of of the following commands to run the server.
@@ -61,6 +65,52 @@ $ npm run start:dev
 
 # production mode
 $ npm run start:prod
+```
+
+### Docker
+
+Follow these steps to create a docker image of this project.
+
+The below command will compile the typescript sourcecode to javascript in the dist directory.
+
+```bash
+$ npm run build
+```
+
+The below command will create the docker image on the system.
+
+```bash
+$ docker build -t tasktime-server:dev-latest .
+```
+
+### Docker-Compose
+
+The below docker compose file uses enviroment variables. Place the .env file shown above in the same directory as this file.
+
+```bash
+version: "3.7"
+
+services:
+  tasktime-server-dev:
+    image: tasktime-server:dev-latest
+    container_name: tasktime-server-dev
+    ports:
+      - "3030:8080"
+    environment:
+      - APP_NAME=$APP_NAME
+      - APP_DESCRIPTION=$APP_DESCRIPTION
+      - SERVER_URL=$SERVER_URL
+      - JWT_SECRET_KEY=$JWT_SECRET_KEY
+      - DB_NAME=$DB_NAME
+      - DB_HOST=$DB_HOST
+      - DB_PORT=$DB_PORT
+      - DB_USER=$DB_USER
+      - DB_PASS=$DB_PASS
+      - SMTP_URL=$SMTP_URL
+      - SMTP_PORT=$SMTP_PORT
+      - SMTP_USER=$SMTP_USER
+      - SMTP_PASS=$SMTP_PASS
+      - SMTP_FROM_ADDRESS=$SMTP_FROM_ADDRESS
 ```
 
 ## Test
