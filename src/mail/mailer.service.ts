@@ -1,19 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
+import Mail from 'nodemailer/lib/mailer';
 import { compile } from 'handlebars';
 import { readFileSync } from 'fs';
-// import { ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 
-/*
-
-This is a custom mailer service to use nodemailer directly.
-This is required while mailer is not updated for nest 10.
-This was taken from here with some tweaks to work with handlebars
-https://github.com/nest-modules/mailer/discussions/998
-
-*/
-
-interface CustomMailOptions extends nodemailer.SendMailOptions {
+interface CustomMailOptions extends Mail.Options {
   template?: string;
   context?: Record<string, any>;
 }
@@ -26,7 +18,7 @@ export class MailerService {
     this.transporter = nodemailer.createTransport(
       {
         host: configService.get<string>('SMTP_URL'),
-        secure: false, // Or use configService to get this value as well
+        secure: true,
         auth: {
           user: configService.get<string>('SMTP_USER'),
           pass: configService.get<string>('SMTP_PASS'),
