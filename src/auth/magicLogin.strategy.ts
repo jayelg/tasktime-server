@@ -22,8 +22,6 @@ export class MagicLoginStrategy extends PassportStrategy(Strategy) {
         'SERVER_URL',
       )}/auth/login/callback`,
       sendMagicLink: async (destination, href) => {
-        // listener at user.Service
-        console.log(href);
         this.eventEmitter.emit(
           'magicLogin.login',
           new MagicLoginEvent(destination, href),

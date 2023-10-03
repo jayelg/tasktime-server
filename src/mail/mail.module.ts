@@ -1,41 +1,17 @@
 import { Global, Module } from '@nestjs/common';
 import { MailService } from './mail.service';
-import { MailerModule } from '@nestjs-modules/mailer';
-import { join } from 'path';
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
+import { MailerService } from './mailer.service';
+import UserLoginListener from './listeners/userLogin.event';
 
 @Global()
 @Module({
   imports: [
-    ConfigModule,
-    MailerModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        transport: {
-          host: configService.get<string>('SMTP_URL'),
-          secure: false,
-          auth: {
-            user: configService.get<string>('SMTP_USER'),
-            pass: configService.get<string>('SMTP_PASS'),
-          },
-        },
-        defaults: {
-          from: `"${configService.get<string>(
-            'APP_NAME',
-          )}" <${configService.get<string>('SMTP_FROM_ADDRESS')}>`,
-        },
-        template: {
-          dir: join(__dirname, 'templates'),
-          adapter: new HandlebarsAdapter(),
-          options: {
-            strict: true,
-          },
-        },
-      }),
+    ConfigModule.forRoot({
+      isGlobal: true,
     }),
   ],
-  providers: [MailService, ConfigService],
+  providers: [MailService, MailerService, UserLoginListener],
   exports: [MailService],
 })
 export class MailModule {}

@@ -1,7 +1,6 @@
-import { MailerService } from '@nestjs-modules/mailer';
+import { MailerService } from './mailer.service';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { OnEvent } from '@nestjs/event-emitter';
 import { NotificationMemberInvitedEvent } from 'src/notification/event/notificationMemberInvited.event';
 import { UserLoginEvent } from 'src/user/event/userLogin.event';
 
@@ -18,7 +17,6 @@ export class MailService {
     this.appUrl = this.configService.get<string>('SERVER_URL');
   }
 
-  @OnEvent('user.login', { async: true })
   async sendMagicLink(payload: UserLoginEvent) {
     const greeting = () => {
       if (!payload.newUser) {
@@ -44,7 +42,6 @@ export class MailService {
     });
   }
 
-  @OnEvent('notification.memberInvited', { async: true })
   async sendNotification(payload: NotificationMemberInvitedEvent) {
     await this.mailerService.sendMail({
       to: payload.inviteeEmail,

@@ -31,7 +31,7 @@ async function bootstrap() {
     }),
   );
   await app.listen(port, () => {
-    console.log(`${appName}\naccess from ${serverUrl}:${port}`);
+    console.log(`${appName}\naccess from ${serverUrl}`);
   });
 }
 bootstrap();
