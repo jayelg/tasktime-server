@@ -12,6 +12,7 @@ async function bootstrap() {
   const appDescription = configService.get<string>('APP_DESCRIPTION');
   const port = configService.get<string>('PORT', '8080'); // env or default
   const serverUrl = configService.get<string>('SERVER_URL');
+  const frontEndUrl = configService.get<string>('FRONTEND_URL');
   const customBasePath = 'v1';
 
   // swagger
@@ -30,6 +31,17 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+
+  // !! REMOVE FOR PRODUCTION !!
+  // for dev only
+  // nest will serve the frontend in production
+  app.enableCors({
+    origin: frontEndUrl,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    allowedHeaders: 'Content-Type, Authorization',
+  });
+
   await app.listen(port, () => {
     console.log(`${appName}\naccess from ${serverUrl}`);
   });
