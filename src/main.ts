@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { API_PREFIX } from './shared/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { snapshot: true });
@@ -13,7 +14,6 @@ async function bootstrap() {
   const port = configService.get<string>('PORT', '8080'); // env or default
   const serverUrl = configService.get<string>('SERVER_URL');
   const frontEndUrl = configService.get<string>('FRONTEND_URL');
-  const customBasePath = 'v1';
 
   // swagger
   const swaggerConfig = new DocumentBuilder()
@@ -23,7 +23,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup(customBasePath, app, document);
+  SwaggerModule.setup(API_PREFIX, app, document);
 
   app.useGlobalPipes(
     new ValidationPipe({
