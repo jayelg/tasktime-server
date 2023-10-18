@@ -1,11 +1,9 @@
 import { Module } from '@nestjs/common';
-import { PublicUiController } from './public-ui/public-ui.controller';
-import { ProtectedUiController } from './protected-ui/protected-ui.controller';
-import { PublicUiService } from './public-ui/public-ui.service';
-import { ProtectedUiService } from './protected-ui/protected-ui.service';
+import { AppUiService } from './app-ui.service';
+import { AppUiController } from './app-ui.controller';
 
 @Module({
-  controllers: [PublicUiController, ProtectedUiController],
-  providers: [PublicUiService, ProtectedUiService],
+  controllers: [AppUiController],
+  providers: [AppUiService],
 })
 export class AppUiModule {}
