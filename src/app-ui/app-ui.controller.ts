@@ -13,6 +13,9 @@ export class AppUiController {
   }
 
   // Catch-all route for the public app
+  // perhaps serve static is faster to serve the public site?
+  // assuming it will avoid the guards and middleware
+  // or can the middleware help with security?
   @SkipAuth()
   @Get('*')
   servePublicApp(@Res() res, @Param('0') path?: string): void {
