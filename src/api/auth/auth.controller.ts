@@ -38,9 +38,35 @@ export class AuthController {
   @ApiOperation({ summary: 'Callback URL for magic link login' })
   @ApiResponse({
     status: 200,
-    description: 'Generated a JTW token for the authenticated user',
+    description:
+      'Return a cookie containing a JTW token for the authenticated user',
   })
-  async callback(@Req() req) {
-    return await this.authService.generateTokens(req.user);
+  async callback(@Req() req, @Res() res) {
+    const token = await this.authService.generateTokens(req.user);
+    res.cookie('jwt', token.access_token, {
+      httpOnly: true,
+      // If you want the cookie to be secure (i.e., only transmitted over HTTPS)
+      // secure: process.env.NODE_ENV !== 'development',
+      maxAge: 1000 * 60 * 60, // 1 hour
+      expires: new Date(Date.now() + 1000 * 60 * 60), // 1 hours from now
+    });
+    res.send({ auth: true });
+  }
+
+  @Get('login/check')
+  // @ApiOperation({ summary: 'Checks validity of JWT in cookie })
+  // @ApiResponse({
+  //   status: 200,
+  //   description:
+  //     'Returns auth: true if jwt is valid',
+  // })
+  async loginCheck(@Res() res) {
+    res.send({ auth: true });
+  }
+
+  @Post('logout')
+  logout(@Res() res) {
+    res.clearCookie('jwt', { path: '/' });
+    return res.send({ loggedOut: true });
   }
 }

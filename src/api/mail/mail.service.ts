@@ -32,7 +32,7 @@ export class MailService {
     await this.mailerService.sendMail({
       to: payload.email,
       subject: `Login to ${this.appName}`,
-      template: './confirmation',
+      template: 'confirmation',
       context: {
         greeting,
         url: payload.url,
@@ -46,7 +46,7 @@ export class MailService {
     await this.mailerService.sendMail({
       to: payload.inviteeEmail,
       subject: payload.notification.title,
-      template: './notification',
+      template: 'notification',
       context: {
         title: payload.notification.title,
         data: payload.notification.data,
