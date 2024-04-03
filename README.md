@@ -1,3 +1,6 @@
+# Migrated into monorepo project
+# Moved to [johngrantdev/tasktime](https://github.com/johngrantdev/tasktime)
+
 # Tasktime Server
 
 The tasktime backend service provides a REST API with validation, authentication and authorization for the tasktime app.
